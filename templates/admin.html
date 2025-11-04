@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}Admin - MyFoodCulture{% endblock %}
+{% block content %}
+    <h2>{{ 'Edit Recipe' if edit_recipe else 'Add New Recipe' }}</h2>
+    <form method="POST" enctype="multipart/form-data" class="admin-form">
+        <label>Title: <input type="text" name="title" value="{{ edit_recipe.title if edit_recipe else '' }}" required></label>
+        <label>Category:
+            <select name="category" required>
+                <option value="breakfast" {% if edit_recipe and edit_recipe.category == 'breakfast' %}selected{% endif %}>Breakfast</option>
+                <option value="snacks" {% if edit_recipe and edit_recipe.category == 'snacks' %}selected{% endif %}>Snacks</option>
+                <option value="lunch_dinner" {% if edit_recipe and edit_recipe.category == 'lunch_dinner' %}selected{% endif %}>Lunch/Dinner</option>
+                <option value="desserts" {% if edit_recipe and edit_recipe.category == 'desserts' %}selected{% endif %}>Desserts</option>
+            </select>
+        </label>
+        <label>Description:
+            <textarea name="description" id="editor" required>{{ edit_recipe.description if edit_recipe else '' }}</textarea>
+        </label>
+        <label>Image: <input type="file" name="image"></label>
+        {% if edit_recipe and edit_recipe.image_path %}
+            <p>Current: <img src="{{ url_for('uploaded_file', filename=edit_recipe.image_path.split('/')[-1]) }}" width="100"></p>
+        {% endif %}
+        <button type="submit">{{ 'Update' if edit_recipe else 'Add' }} Recipe</button>
+    </form>
+    <h3>Manage Recipes</h3>
+    <form method="POST" action="{{ url_for('admin_search') }}" class="search-form">
+        <input type="text" name="query" placeholder="Search to edit/delete" value="{{ query if query else '' }}">
+        <button type="submit"><i class="fas fa-search"></i></button>
+    </form>
+    {% if recipes %}
+        <select class="recipe-select" onchange="if(this.value) window.location.href=this.value">
+            <option value="">Select to Edit</option>
+            {% for recipe in recipes %}
+                <option value="{{ url_for('edit_recipe', id=recipe.id) }}">{{ recipe.title }}</option>
+            {% endfor %}
+        </select>
+        <ul class="recipe-list">
+            {% for recipe in recipes %}
+                <li>{{ recipe.title }} - <a href="{{ url_for('edit_recipe', id=recipe.id) }}">Edit</a> | <a href="{{ url_for('delete_recipe', id=recipe.id) }}" onclick="return confirm('Delete?')">Delete</a></li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No recipes{% if query %} for "{{ query }}"{% endif %}.</p>
+    {% endif %}
+
+    <!-- CKEditor 5 -->
+    <script src="https://cdn.ckeditor.com/ckeditor5/41.0.0/classic/ckeditor.js"></script>
+    <script>
+        ClassicEditor.create(document.querySelector('#editor'), {
+            toolbar: ['bold', 'italic', 'fontFamily', 'fontSize', 'fontColor', 'alignment', 'bulletedList', 'numberedList'],
+            fontFamily: { options: ['default', 'Inter, sans-serif', 'Poppins, sans-serif', 'Lora, serif'] },
+            fontSize: { options: [8, 10, 12, 14, 'default', 18, 24, 36] }
+        }).catch(console.error);
+    </script>
+{% endblock %}

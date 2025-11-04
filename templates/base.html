@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MyFoodCulture - Jain Recipes{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><i class="fas fa-leaf"></i> MyFoodCulture</h1>
+            <p class="tagline">Simple Jain recipes for everyday life.</p>
+            <nav>
+                <ul>
+                    <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
+                    <li><a href="/category/breakfast"><i class="fas fa-coffee"></i> Breakfast</a></li>
+                    <li><a href="/category/snacks"><i class="fas fa-utensils"></i> Snacks</a></li>
+                    <li><a href="/category/lunch_dinner"><i class="fas fa-drumstick-bite"></i> Lunch/Dinner</a></li>
+                    <li><a href="/category/desserts"><i class="fas fa-ice-cream"></i> Desserts</a></li>
+                    <li><a href="/admin" class="admin-link"><i class="fas fa-cog"></i> Admin</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <main class="container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="flashes">
+                    {% for message in messages %}
+                        <li><i class="fas fa-exclamation-triangle"></i> {{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 MyFoodCulture. Inspired by simple, tasty Jain recipes. <i class="fas fa-heart"></i></p>
+        </div>
+    </footer>
+</body>
+</html>

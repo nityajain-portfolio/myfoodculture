@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}{{ category }} - MyFoodCulture{% endblock %}
+{% block content %}
+    <section class="category-hero">
+        <h2>{{ category }} Recipes</h2>
+        <p>Delicious, easy Jain {{ category.lower() }} ideas.</p>
+    </section>
+    <div class="recipe-grid">
+        {% for recipe in recipes %}
+            <div class="recipe-card">
+                {% if recipe.image_path %}
+                    <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
+                {% endif %}
+                <h3>{{ recipe.title }}</h3>
+                <div class="excerpt">{{ recipe.description | safe | truncate(200) }}</div>
+                <a href="#" class="read-more">View Full Recipe <i class="fas fa-arrow-right"></i></a>
+            </div>
+        {% endfor %}
+    </div>
+    {% if not recipes %}
+        <p>No recipes yet in this category. Add some via <a href="/admin">Admin</a>!</p>
+    {% endif %}
+{% endblock %}
