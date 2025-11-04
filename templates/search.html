@@ -1,23 +1,33 @@
 {% extends 'base.html' %}
-{% block title %}Search - MyFoodCulture{% endblock %}
+{% block title %}Search Results - MyFoodCulture{% endblock %}
 {% block content %}
-    <section class="search-hero">
-        <h2>Search Results for "{{ query }}"</h2>
-    </section>
+<div class="page-header">
+    <h2>Search Results for "{{ query }}"</h2>
+    <p>Found {{ recipes|length }} recipe(s) matching your search</p>
+</div>
+
+{% if recipes %}
     <div class="recipe-grid">
         {% for recipe in recipes %}
             <div class="recipe-card">
                 {% if recipe.image_path %}
                     <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
+                {% else %}
+                    <img src="https://via.placeholder.com/400x220/A8E6CF/333333?text=No+Image" alt="{{ recipe.title }}">
                 {% endif %}
-                <h3>{{ recipe.title }}</h3>
-                <div class="excerpt">{{ recipe.description | safe | truncate(200) }}</div>
-                <a href="#" class="read-more">View Full Recipe <i class="fas fa-arrow-right"></i></a>
+                <h4>{{ recipe.title }}</h4>
+                <p class="excerpt">{{ recipe.description | safe | truncate(120) }}</p>
+                <a href="/recipe/{{ recipe.id }}" class="read-more">View Recipe <i class="fas fa-arrow-right"></i></a>
             </div>
         {% endfor %}
     </div>
-    {% if not recipes %}
-        <p>No results for "{{ query }}". Try another search!</p>
-    {% endif %}
-    <a href="/" class="back-link">Back to Home</a>
+{% else %}
+    <div class="no-recipes">
+        <p><i class="fas fa-search"></i> No recipes found for "{{ query }}". Try a different search term!</p>
+    </div>
+{% endif %}
+
+<div style="text-align: center; margin-top: 2rem;">
+    <a href="/" class="back-link"><i class="fas fa-home"></i> Back to Home</a>
+</div>
 {% endblock %}

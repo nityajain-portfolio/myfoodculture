@@ -69,25 +69,21 @@ def category(cat):
 
 @app.route('/search', methods=['GET', 'POST'])
 def search():
-    if request.method == 'POST':
-        query = request.form['query']
-        if not query:
-            flash('Please enter a search term.')
-            return redirect(url_for('index'))
-
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute(
-            "SELECT * FROM recipes WHERE title LIKE %s OR description LIKE %s",
-            (f'%{query}%', f'%{query}%')
-        )
-        recipes = cursor.fetchall()
-        cursor.close()
-        conn.close()
-        return render_template('search.html', recipes=recipes, query=query)
-
-    return redirect(url_for('index'))
-
+    query = request.form.get('q') if request.method == 'POST' else request.args.get('q', '')
+    if not query:
+        return render_template('search.html', recipes=[], query='')
+    conn = mysql.connector.connect(
+        host=os.getenv('DB_HOST'),
+        user=os.getenv('DB_USER'),
+        password=os.getenv('DB_PASSWORD'),
+        database=os.getenv('DB_NAME')
+    )
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM recipes WHERE title LIKE %s OR description LIKE %s", (f'%{query}%', f'%{query}%'))
+    recipes = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('search.html', recipes=recipes, query=query)
 
 @app.route('/admin', methods=['GET', 'POST'])
 @auth_required
@@ -145,54 +141,69 @@ def admin_search():
     return render_template('admin.html', recipes=recipes, query=query)
 
 
+from flask import Flask, request, render_template, abort
+# ... other imports ...
+
+@app.route('/recipe/<int:id>')
+def recipe(id):
+    conn = mysql.connector.connect(
+        host=os.getenv('DB_HOST'),
+        user=os.getenv('DB_USER'),
+        password=os.getenv('DB_PASSWORD'),
+        database=os.getenv('DB_NAME')
+    )
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT id, title, description, ingredients, directions, image_path FROM recipes WHERE id = %s", (id,))
+    recipe = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    if recipe:
+        return render_template('recipe.html', recipe=recipe)
+    else:
+        abort(404)
+
 @app.route('/admin/edit/<int:id>', methods=['GET', 'POST'])
 @auth_required
 def edit_recipe(id):
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-
     if request.method == 'POST':
         title = request.form['title']
         category = request.form['category']
         description = request.form['description']
-        file = request.files.get('image')
-
-        if not title or not category or not description:
-            flash('All fields are required!')
-            cursor.close()
-            conn.close()
-            return redirect(url_for('edit_recipe', id=id))
-
-        cursor.execute("SELECT image_path FROM recipes WHERE id = %s", (id,))
-        old_recipe = cursor.fetchone()
-        image_path = old_recipe['image_path']
-
-        if file and allowed_file(file.filename):
-            if image_path and os.path.exists(image_path):
-                os.remove(image_path)
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-        cursor.execute(
-            "UPDATE recipes SET title = %s, category = %s, description = %s, image_path = %s WHERE id = %s",
-            (title, category, description, image_path, id)
-        )
-        conn.commit()
-        cursor.close()
-        conn.close()
-        flash('Recipe updated successfully!')
+        ingredients = request.form['ingredients']
+        directions = request.form['directions']
+        image = request.files['image'] if 'image' in request.files else None
+        # Validate required fields
+        if not all([title, category, description, ingredients, directions]):
+            return "All fields are required", 400
+        # ... save to DB ...
         return redirect(url_for('admin'))
-
+    conn = mysql.connector.connect(
+        host=os.getenv('DB_HOST'),
+        user=os.getenv('DB_USER'),
+        password=os.getenv('DB_PASSWORD'),
+        database=os.getenv('DB_NAME')
+    )
+    cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM recipes WHERE id = %s", (id,))
     recipe = cursor.fetchone()
     cursor.close()
     conn.close()
-    if not recipe:
-        flash('Recipe not found!')
-        return redirect(url_for('admin'))
-    return render_template('admin.html', recipes=[], edit_recipe=recipe)
+    return render_template('admin.html', edit_recipe=recipe)
 
+@app.route('/admin/add', methods=['GET', 'POST'])
+def add_recipe():
+    if request.method == 'POST':
+        title = request.form['title']
+        category = request.form['category']
+        description = request.form['description']
+        ingredients = request.form['ingredients']
+        directions = request.form['directions']
+        image = request.files['image'] if 'image' in request.files else None
+        if not all([title, category, description, ingredients, directions]):
+            return "All fields are required", 400
+        # ... save to DB ...
+        return redirect(url_for('admin'))
+    return render_template('admin.html', edit_recipe=None)
 
 @app.route('/admin/delete/<int:id>')
 @auth_required

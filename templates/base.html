@@ -20,6 +20,12 @@
                     <li><a href="/category/snacks"><i class="fas fa-utensils"></i> Snacks</a></li>
                     <li><a href="/category/lunch_dinner"><i class="fas fa-drumstick-bite"></i> Lunch/Dinner</a></li>
                     <li><a href="/category/desserts"><i class="fas fa-ice-cream"></i> Desserts</a></li>
+                    <li>
+                        <form action="/search" method="POST" class="nav-search-form">
+                            <input type="text" name="q" placeholder="Search recipes..." required>
+                            <button type="submit"><i class="fas fa-search"></i></button>
+                        </form>
+                    </li>
                     <li><a href="/admin" class="admin-link"><i class="fas fa-cog"></i> Admin</a></li>
                 </ul>
             </nav>
@@ -27,13 +33,13 @@
     </header>
     <main class="container">
         {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <ul class="flashes">
-                    {% for message in messages %}
-                        <li><i class="fas fa-exclamation-triangle"></i> {{ message }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
+        {% if messages %}
+        <ul class="flashes">
+            {% for message in messages %}
+            <li><i class="fas fa-check-circle"></i> {{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
         {% endwith %}
         {% block content %}{% endblock %}
     </main>

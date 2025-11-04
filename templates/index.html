@@ -3,7 +3,7 @@
 {% block content %}
     <section class="hero">
         <h2>The Latest & Greatest</h2>
-        <p>Cozy Jain recipes for everyday life — from simple breakfasts to delightful desserts.</p>
+        <p>Cozy Jain recipes for everyday life - from simple breakfasts to delightful desserts.</p>
     </section>
     <section class="featured">
         <h3>Featured Jain Recipes</h3>
@@ -12,17 +12,19 @@
                 <div class="recipe-card">
                     {% if recipe.image_path %}
                         <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
+                    {% else %}
+                        <img src="https://via.placeholder.com/400x220/A8E6CF/333333?text=No+Image" alt="{{ recipe.title }}">
                     {% endif %}
                     <h4>{{ recipe.title }}</h4>
                     <p class="excerpt">{{ recipe.description | safe | truncate(150) }}</p>
-                    <a href="/category/{{ recipe.category }}" class="read-more">Continue Reading <i class="fas fa-arrow-right"></i></a>
+                    <a href="/recipe/{{ recipe.id }}" class="read-more">View Recipe <i class="fas fa-arrow-right"></i></a>
                 </div>
             {% endfor %}
         </div>
     </section>
     <section class="about">
-        <h3>Hi! I’m Your Host</h3>
-        <p>Welcome to MyFoodCulture. Explore authentic Jain recipes that honor tradition with fresh, simple ingredients. Favorites include lake days and dark chocolate — but no onions or garlic here!</p>
-        <a href="/admin" class="admin-link">Manage Recipes</a>
+        <h3>Hi! I'm Your Host</h3>
+        <p>Welcome to MyFoodCulture. Explore authentic Jain recipes that honor tradition with fresh, simple ingredients. Favorites include lake days and dark chocolate - but no onions or garlic here!</p>
+        <a href="/admin" class="admin-link" style="padding: 0.8rem 1.5rem; border-radius: 6px; text-decoration: none; display: inline-block; margin-top: 1rem;">Manage Recipes</a>
     </section>
 {% endblock %}
