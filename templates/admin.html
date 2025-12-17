@@ -1,78 +1,91 @@
 {% extends 'base.html' %}
 {% block title %}Admin - MyFoodCulture{% endblock %}
 {% block content %}
-<div class="admin-container" style="max-width: 800px; padding: 1.5rem;">
-    <h2 style="font-size: 1.6rem; margin-bottom: 1rem;"><i class="fas fa-cog"></i> {{ 'Edit Recipe' if edit_recipe else 'Add New Recipe' }}</h2>
+<div class="admin-container">
+    <h2><i class="fas fa-cog"></i> {{ 'Edit Recipe' if edit_recipe else 'Add New Recipe' }}</h2>
 
-    <form method="POST" enctype="multipart/form-data" class="admin-form" style="background: #FFF8E8; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-            <label style="margin-bottom: 0;">
-                <strong style="font-size: 0.9rem;">Title:</strong>
-                <input type="text" name="title" value="{{ edit_recipe.title if edit_recipe else '' }}" required style="padding: 0.5rem; margin-top: 0.2rem;">
+    <form method="POST" enctype="multipart/form-data" class="admin-form">
+        <div class="form-row">
+            <label>
+                <strong>Title:</strong>
+                <input type="text" name="title" value="{{ edit_recipe.title if edit_recipe else '' }}" required>
             </label>
 
-            <label style="margin-bottom: 0;">
-                <strong style="font-size: 0.9rem;">Category:</strong>
-                <select name="category" required style="padding: 0.5rem; margin-top: 0.2rem;">
+            <label>
+                <strong>Category:</strong>
+                <select name="category" required>
                     <option value="breakfast" {% if edit_recipe and edit_recipe.category == 'breakfast' %}selected{% endif %}>Breakfast</option>
                     <option value="snacks" {% if edit_recipe and edit_recipe.category == 'snacks' %}selected{% endif %}>Snacks</option>
                     <option value="lunch_dinner" {% if edit_recipe and edit_recipe.category == 'lunch_dinner' %}selected{% endif %}>Lunch/Dinner</option>
                     <option value="desserts" {% if edit_recipe and edit_recipe.category == 'desserts' %}selected{% endif %}>Desserts</option>
                 </select>
             </label>
+
+            <label>
+                <strong>Cuisine:</strong>
+                <select name="cuisine" required>
+                    <option value="">Select Cuisine</option>
+                    <option value="asian" {% if edit_recipe and edit_recipe.cuisine == 'asian' %}selected{% endif %}>Asian</option>
+                    <option value="indian" {% if edit_recipe and edit_recipe.cuisine == 'indian' %}selected{% endif %}>Indian</option>
+                    <option value="mexican" {% if edit_recipe and edit_recipe.cuisine == 'mexican' %}selected{% endif %}>Mexican</option>
+                    <option value="italian" {% if edit_recipe and edit_recipe.cuisine == 'italian' %}selected{% endif %}>Italian</option>
+                </select>
+            </label>
         </div>
 
-        <label style="display: block; margin-bottom: 1rem;">
-            <strong style="font-size: 0.9rem;">Description:</strong>
-            <textarea name="description" required style="margin-top: 0.2rem; min-height: 80px; width: 100%; padding: 0.5rem; border: 1px solid #A8E6CF; border-radius: 4px;">{{ edit_recipe.description if edit_recipe else '' }}</textarea>
+        <label>
+            <strong>Description:</strong>
+            <textarea name="description" required>{{ edit_recipe.description if edit_recipe else '' }}</textarea>
         </label>
 
-        <label style="display: block; margin-bottom: 1rem;">
-            <strong style="font-size: 0.9rem;">Ingredients (one per line):</strong>
-            <textarea name="ingredients" required style="margin-top: 0.2rem; min-height: 100px; width: 100%; padding: 0.5rem; border: 1px solid #A8E6CF; border-radius: 4px;">{{ edit_recipe.ingredients if edit_recipe else '' }}</textarea>
+        <label>
+            <strong>Ingredients (one per line):</strong>
+            <textarea name="ingredients" required>{{ edit_recipe.ingredients if edit_recipe else '' }}</textarea>
         </label>
 
-        <label style="display: block; margin-bottom: 1rem;">
-            <strong style="font-size: 0.9rem;">Directions (one per line):</strong>
-            <textarea name="directions" required style="margin-top: 0.2rem; min-height: 120px; width: 100%; padding: 0.5rem; border: 1px solid #A8E6CF; border-radius: 4px;">{{ edit_recipe.directions if edit_recipe else '' }}</textarea>
+        <label>
+            <strong>Directions (one per line):</strong>
+            <textarea name="directions" required>{{ edit_recipe.directions if edit_recipe else '' }}</textarea>
         </label>
 
-        <div style="display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: end;">
-            <label style="margin-bottom: 0;">
-                <strong style="font-size: 0.9rem;">Recipe Image (optional):</strong>
-                <input type="file" name="image" accept="image/*" style="margin-top: 0.2rem; padding: 0.4rem;">
+        <div class="form-row">
+            <label>
+                <strong>Recipe Image (optional):</strong>
+                <input type="file" name="image" accept="image/*">
             </label>
 
-            <button type="submit" style="padding: 0.6rem 1.5rem; margin-bottom: 0; background: #A8E6CF; color: #333; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
-                <i class="fas fa-save"></i> {{ 'Update' if edit_recipe else 'Add Recipe' }}
-            </button>
+            <div style="display: flex; align-items: flex-end;">
+                <button type="submit">
+                    <i class="fas fa-save"></i> {{ 'Update Recipe' if edit_recipe else 'Add Recipe' }}
+                </button>
+            </div>
         </div>
 
         {% if edit_recipe and edit_recipe.image_path %}
-            <div style="margin-top: 0.8rem; padding: 0.5rem; background: #FFF; border-radius: 4px;">
-                <p style="margin: 0 0 0.3rem 0; font-size: 0.85rem;"><strong>Current Image:</strong></p>
-                <img src="{{ url_for('uploaded_file', filename=edit_recipe.image_path.split('/')[-1]) }}" width="120" alt="Current recipe image" style="border-radius: 4px;">
+            <div class="current-image">
+                <p style="margin: 0 0 0.5rem 0; font-weight: 600;"><strong>Current Image:</strong></p>
+                <img src="{{ url_for('uploaded_file', filename=edit_recipe.image_path.split('/')[-1]) }}" width="150" alt="Current recipe image">
             </div>
         {% endif %}
     </form>
 
-    <h3 style="font-size: 1.3rem; margin-bottom: 0.8rem; border-bottom: 2px solid #A8E6CF; padding-bottom: 0.4rem;"><i class="fas fa-list"></i> Manage Recipes</h3>
+    <h3><i class="fas fa-list"></i> Manage Recipes</h3>
 
-    <form method="POST" action="{{ url_for('admin_search') }}" class="search-form" style="max-width: 100%; margin-bottom: 1rem; padding: 0.6rem;">
-        <input type="text" name="query" placeholder="Search recipes..." value="{{ query if query else '' }}" style="padding: 0.5rem;">
-        <button type="submit" style="padding: 0.5rem 1rem;"><i class="fas fa-search"></i> Search</button>
+    <form method="POST" action="{{ url_for('admin_search') }}" class="search-form">
+        <input type="text" name="query" placeholder="Search recipes..." value="{{ query if query else '' }}">
+        <button type="submit"><i class="fas fa-search"></i> Search</button>
     </form>
 
     {% if recipes %}
-        <ul class="recipe-list" style="padding: 0.8rem; max-height: 400px; overflow-y: auto; list-style: none;">
+        <ul class="recipe-list">
             {% for recipe in recipes %}
-                <li style="padding: 0.6rem 0.8rem; margin-bottom: 0.5rem; font-size: 0.9rem; background: #FFF; border: 1px solid #A8E6CF; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-weight: 600; color: #333;">{{ recipe.title }}</span>
-                    <div style="display: flex; gap: 0.8rem;">
-                        <a href="{{ url_for('edit_recipe', id=recipe.id) }}" style="color: #A8E6CF; text-decoration: none; font-weight: 600; font-size: 0.85rem;">
+                <li>
+                    <span class="recipe-title">{{ recipe.title }}</span>
+                    <div class="recipe-actions">
+                        <a href="{{ url_for('edit_recipe', id=recipe.id) }}">
                             <i class="fas fa-edit"></i> Edit
                         </a>
-                        <a href="{{ url_for('delete_recipe', id=recipe.id) }}" onclick="return confirm('Delete this recipe?')" style="color: #A8E6CF; text-decoration: none; font-weight: 600; font-size: 0.85rem;">
+                        <a href="{{ url_for('delete_recipe', id=recipe.id) }}" onclick="return confirm('Delete this recipe?')">
                             <i class="fas fa-trash"></i> Delete
                         </a>
                     </div>
@@ -80,48 +93,16 @@
             {% endfor %}
         </ul>
     {% else %}
-        <div style="padding: 1rem; text-align: center;">
-            <p style="font-size: 0.9rem; color: #666;"><i class="fas fa-info-circle"></i> No recipes found{% if query %} for "{{ query }}"{% endif %}.</p>
+        <div class="no-recipes">
+            <i class="fas fa-info-circle"></i>
+            <p>No recipes found{% if query %} for "{{ query }}"{% endif %}.</p>
         </div>
     {% endif %}
 </div>
 
-<style>
-    /* Compact scrollbar for recipe list */
-    .recipe-list::-webkit-scrollbar {
-        width: 8px;
-    }
-
-    .recipe-list::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 4px;
-    }
-
-    .recipe-list::-webkit-scrollbar-thumb {
-        background: #A8E6CF;
-        border-radius: 4px;
-    }
-
-    .recipe-list::-webkit-scrollbar-thumb:hover {
-        background: #D7BDE2;
-    }
-
-    /* Mobile responsive adjustments */
-    @media (max-width: 768px) {
-        .admin-container {
-            padding: 1rem !important;
-        }
-
-        div[style*="grid-template-columns: 1fr 1fr"] {
-            grid-template-columns: 1fr !important;
-        }
-    }
-</style>
-
 <script>
-    console.log('Admin page loaded - Simple version without CKEditor');
+    console.log('Admin page loaded');
 
-    // Test if form exists
     const form = document.querySelector('form.admin-form');
     console.log('Form found:', form ? 'YES' : 'NO');
 
@@ -130,10 +111,8 @@
             console.log('🚀 FORM IS SUBMITTING!');
             console.log('Title:', document.querySelector('input[name="title"]').value);
             console.log('Category:', document.querySelector('select[name="category"]').value);
+            console.log('Cuisine:', document.querySelector('select[name="cuisine"]').value);
             console.log('Description:', document.querySelector('textarea[name="description"]').value.substring(0, 50));
-            console.log('Ingredients:', document.querySelector('textarea[name="ingredients"]').value.substring(0, 50));
-            console.log('Directions:', document.querySelector('textarea[name="directions"]').value.substring(0, 50));
-            // Don't prevent default - let it submit normally
         });
     }
 </script>

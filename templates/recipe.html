@@ -1,40 +1,79 @@
 {% extends 'base.html' %}
 {% block title %}{{ recipe.title }} - MyFoodCulture{% endblock %}
 {% block content %}
-<div class="recipe-detail" style="padding: 1.5rem; margin: 1rem auto;">
-    <h1 style="font-size: 2rem; padding-bottom: 0.6rem; margin-bottom: 1rem;">{{ recipe.title }}</h1>
+<div class="recipe-detail">
+    <h1>{{ recipe.title }}</h1>
 
-    {% if recipe.image_path %}
-        <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}" style="margin: 1rem 0;">
-    {% endif %}
-
-    <h3 style="font-size: 1.3rem; margin-top: 1.2rem; margin-bottom: 0.6rem;"><i class="fas fa-info-circle"></i> Description</h3>
-    <p style="margin-bottom: 1rem; line-height: 1.6;">{{ recipe.description | safe if recipe.description else 'No description available.' }}</p>
-
-    <h3 style="font-size: 1.3rem; margin-top: 1.2rem; margin-bottom: 0.6rem;"><i class="fas fa-shopping-basket"></i> Ingredients</h3>
-    <ul style="padding-left: 1.5rem; line-height: 1.6; margin-bottom: 1rem;">
-        {% if recipe.ingredients %}
-            {% set ingredients_list = recipe.ingredients.split('\n') %}
-            {% for item in ingredients_list if item.strip() %}
-                <li style="margin-bottom: 0.3rem;">{{ item.strip() }}</li>
-            {% endfor %}
-        {% else %}
-            <li>No ingredients listed.</li>
+    <div class="recipe-meta" style="margin-bottom: 1.5rem;">
+        <span class="recipe-badge badge-category">
+            {% if recipe.category == 'breakfast' %}
+                <i class="fas fa-coffee"></i> Breakfast
+            {% elif recipe.category == 'snacks' %}
+                <i class="fas fa-utensils"></i> Snacks
+            {% elif recipe.category == 'lunch_dinner' %}
+                <i class="fas fa-leaf"></i> Lunch/Dinner
+            {% elif recipe.category == 'desserts' %}
+                <i class="fas fa-ice-cream"></i> Desserts
+            {% endif %}
+        </span>
+        {% if recipe.cuisine %}
+            <span class="recipe-badge badge-cuisine">
+                {% if recipe.cuisine == 'asian' %}
+                    <i class="fas fa-globe-asia"></i> Asian
+                {% elif recipe.cuisine == 'indian' %}
+                    <i class="fas fa-om"></i> Indian
+                {% elif recipe.cuisine == 'mexican' %}
+                    <i class="fas fa-pepper-hot"></i> Mexican
+                {% elif recipe.cuisine == 'italian' %}
+                    <i class="fas fa-pizza-slice"></i> Italian
+                {% endif %}
+            </span>
         {% endif %}
-    </ul>
+    </div>
 
-    <h3 style="font-size: 1.3rem; margin-top: 1.2rem; margin-bottom: 0.6rem;"><i class="fas fa-list-ol"></i> Directions</h3>
-    <ol style="padding-left: 1.5rem; line-height: 1.6; margin-bottom: 1rem;">
-        {% if recipe.directions %}
-            {% set directions_list = recipe.directions.split('\n') %}
-            {% for step in directions_list if step.strip() %}
-                <li style="margin-bottom: 0.3rem;">{{ step.strip() }}</li>
-            {% endfor %}
-        {% else %}
-            <li>No directions provided.</li>
+    <div class="recipe-header">
+        {% if recipe.image_path %}
+            <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
         {% endif %}
-    </ol>
 
-    <a href="/" class="back-link" style="margin-top: 1.5rem;"><i class="fas fa-arrow-left"></i> Back to Home</a>
+        <div class="recipe-description">
+            <h3><i class="fas fa-info-circle"></i> Description</h3>
+            <p>{{ recipe.description | safe if recipe.description else 'No description available.' }}</p>
+        </div>
+    </div>
+
+    <div class="recipe-content-grid">
+        <div class="ingredients-section">
+            <h3><i class="fas fa-shopping-basket"></i> Ingredients</h3>
+            <ul>
+                {% if recipe.ingredients %}
+                    {% set ingredients_list = recipe.ingredients.split('\n') %}
+                    {% for item in ingredients_list if item.strip() %}
+                        <li>{{ item.strip() }}</li>
+                    {% endfor %}
+                {% else %}
+                    <li>No ingredients listed.</li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <div class="directions-section">
+            <h3><i class="fas fa-list-ol"></i> Directions</h3>
+            <ol>
+                {% if recipe.directions %}
+                    {% set directions_list = recipe.directions.split('\n') %}
+                    {% for step in directions_list if step.strip() %}
+                        <li>{{ step.strip() }}</li>
+                    {% endfor %}
+                {% else %}
+                    <li>No directions provided.</li>
+                {% endif %}
+            </ol>
+        </div>
+    </div>
+
+    <a href="/" class="back-link" style="margin-top: 2rem;">
+        <i class="fas fa-arrow-left"></i> Back to Home
+    </a>
 </div>
 {% endblock %}

@@ -18,7 +18,7 @@ print("\n" + "=" * 60)
 print("🚀 MyFoodCulture App Starting...")
 print("=" * 60)
 print(f"📁 Upload Folder: {app.config['UPLOAD_FOLDER']}")
-print(f"🔑 Secret Key Set: {'Yes' if app.secret_key else 'No'}")
+print(f"🔐 Secret Key Set: {'Yes' if app.secret_key else 'No'}")
 print("=" * 60 + "\n")
 
 
@@ -65,6 +65,12 @@ def index():
     return render_template('index.html', recipes=recipes)
 
 
+@app.route('/about')
+def about():
+    print("\n📖 Loading about page...")
+    return render_template('about.html')
+
+
 @app.route('/category/<string:cat>')
 def category(cat):
     print(f"\n📂 Loading category: {cat}")
@@ -76,6 +82,19 @@ def category(cat):
     conn.close()
     print(f"✅ Found {len(recipes)} recipes in {cat}\n")
     return render_template('category.html', recipes=recipes, category=cat.capitalize().replace('_', '/'))
+
+
+@app.route('/cuisine/<string:cuisine_type>')
+def cuisine(cuisine_type):
+    print(f"\n🌍 Loading cuisine: {cuisine_type}")
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM recipes WHERE cuisine = %s", (cuisine_type,))
+    recipes = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    print(f"✅ Found {len(recipes)} recipes in {cuisine_type} cuisine\n")
+    return render_template('category.html', recipes=recipes, category=cuisine_type.capitalize())
 
 
 @app.route('/search', methods=['GET', 'POST'])
@@ -105,6 +124,7 @@ def admin():
         # Get form data
         title = request.form.get('title')
         category = request.form.get('category')
+        cuisine = request.form.get('cuisine')
         description = request.form.get('description')
         ingredients = request.form.get('ingredients')
         directions = request.form.get('directions')
@@ -114,6 +134,7 @@ def admin():
         print(f"\n📋 Form Data Received:")
         print(f"   Title: {title}")
         print(f"   Category: {category}")
+        print(f"   Cuisine: {cuisine}")
         print(f"   Description: {description[:50] if description else 'None'}...")
         print(f"   Ingredients: {ingredients[:50] if ingredients else 'None'}...")
         print(f"   Directions: {directions[:50] if directions else 'None'}...")
@@ -125,6 +146,8 @@ def admin():
             missing_fields.append('title')
         if not category:
             missing_fields.append('category')
+        if not cuisine:
+            missing_fields.append('cuisine')
         if not description:
             missing_fields.append('description')
         if not ingredients:
@@ -157,8 +180,8 @@ def admin():
             conn = get_db_connection()
             cursor = conn.cursor()
 
-            sql = "INSERT INTO recipes (title, category, description, ingredients, directions, image_path) VALUES (%s, %s, %s, %s, %s, %s)"
-            values = (title, category, description, ingredients, directions, image_path)
+            sql = "INSERT INTO recipes (title, category, cuisine, description, ingredients, directions, image_path) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+            values = (title, category, cuisine, description, ingredients, directions, image_path)
 
             cursor.execute(sql, values)
             conn.commit()
@@ -251,15 +274,17 @@ def edit_recipe(id):
 
         title = request.form.get('title')
         category = request.form.get('category')
+        cuisine = request.form.get('cuisine')
         description = request.form.get('description')
         ingredients = request.form.get('ingredients')
         directions = request.form.get('directions')
         file = request.files.get('image')
 
         print(f"   New title: {title}")
+        print(f"   New cuisine: {cuisine}")
 
         # Validate required fields
-        if not all([title, category, description, ingredients, directions]):
+        if not all([title, category, cuisine, description, ingredients, directions]):
             print("❌ Missing required fields for edit")
             flash('All fields are required!')
             return redirect(url_for('edit_recipe', id=id))
@@ -287,8 +312,8 @@ def edit_recipe(id):
 
             # Update recipe
             cursor.execute(
-                "UPDATE recipes SET title=%s, category=%s, description=%s, ingredients=%s, directions=%s, image_path=%s WHERE id=%s",
-                (title, category, description, ingredients, directions, image_path, id)
+                "UPDATE recipes SET title=%s, category=%s, cuisine=%s, description=%s, ingredients=%s, directions=%s, image_path=%s WHERE id=%s",
+                (title, category, cuisine, description, ingredients, directions, image_path, id)
             )
             conn.commit()
             cursor.close()

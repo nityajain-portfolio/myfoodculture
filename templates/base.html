@@ -9,30 +9,70 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    <!-- Mobile Navigation Sidebar -->
+    <div class="nav-overlay" id="navOverlay"></div>
+    <div class="mobile-nav" id="mobileNav">
+        <div class="mobile-nav-header">
+            <h2><i class="fas fa-leaf"></i> Menu</h2>
+            <button class="close-nav" id="closeNav" aria-label="Close menu">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <p class="mobile-nav-tagline">Simple Jain recipes for everyday life.</p>
+
+        <div class="mobile-nav-search">
+            <form action="/search" method="POST">
+                <input type="text" name="q" placeholder="Search recipes..." required>
+                <button type="submit"><i class="fas fa-search"></i></button>
+            </form>
+        </div>
+
+        <ul>
+            <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="/about"><i class="fas fa-info-circle"></i> About</a></li>
+            <li><a href="/category/breakfast"><i class="fas fa-coffee"></i> Breakfast</a></li>
+            <li><a href="/category/snacks"><i class="fas fa-utensils"></i> Snacks</a></li>
+            <li><a href="/category/lunch_dinner"><i class="fas fa-leaf"></i> Lunch/Dinner</a></li>
+            <li><a href="/category/desserts"><i class="fas fa-ice-cream"></i> Desserts</a></li>
+            <li style="border-top: 2px solid var(--primary-green); margin-top: 1rem; padding-top: 1rem;">
+                <div style="padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 700; color: var(--primary-green); text-transform: uppercase; letter-spacing: 1px;">
+                    <i class="fas fa-globe"></i> Cuisines
+                </div>
+            </li>
+            <li><a href="/cuisine/asian"><i class="fas fa-globe-asia"></i> Asian</a></li>
+            <li><a href="/cuisine/indian"><i class="fas fa-om"></i> Indian</a></li>
+            <li><a href="/cuisine/mexican"><i class="fas fa-pepper-hot"></i> Mexican</a></li>
+            <li><a href="/cuisine/italian"><i class="fas fa-pizza-slice"></i> Italian</a></li>
+        </ul>
+    </div>
+
     <header>
         <div class="container">
-            <a href="/" style="text-decoration: none; color: inherit;">
-                <h1 style="cursor: pointer;"><i class="fas fa-leaf"></i> MyFoodCulture</h1>
-            </a>
-            <p class="tagline">Simple Jain recipes for everyday life.</p>
+            <div class="logo-section">
+                <button class="menu-toggle" id="menuToggle" aria-label="Open menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <a href="/" style="text-decoration: none; color: inherit;">
+                    <h1><i class="fas fa-leaf"></i> MyFoodCulture</h1>
+                </a>
+            </div>
+
             <nav>
                 <ul>
                     <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
-                    <li><a href="/category/breakfast"><i class="fas fa-coffee"></i> Breakfast</a></li>
-                    <li><a href="/category/snacks"><i class="fas fa-utensils"></i> Snacks</a></li>
-                    <li><a href="/category/lunch_dinner"><i class="fas fa-leaf"></i> Lunch-Dinner</a></li>
-                    <li><a href="/category/desserts"><i class="fas fa-ice-cream"></i> Desserts</a></li>
+                    <li><a href="/about"><i class="fas fa-info-circle"></i> About</a></li>
                     <li>
                         <form action="/search" method="POST" class="nav-search-form">
-                            <input type="text" name="q" placeholder="Search recipes..." required>
+                            <input type="text" name="q" placeholder="Search..." required>
                             <button type="submit"><i class="fas fa-search"></i></button>
                         </form>
                     </li>
-                    <li><a href="/admin" class="admin-link"><i class="fas fa-cog"></i> Admin</a></li>
                 </ul>
             </nav>
         </div>
     </header>
+
     <main class="container">
         {% with messages = get_flashed_messages() %}
         {% if messages %}
@@ -45,10 +85,41 @@
         {% endwith %}
         {% block content %}{% endblock %}
     </main>
+
     <footer>
         <div class="container">
             <p>&copy; 2025 MyFoodCulture. Inspired by simple, tasty Jain recipes. <i class="fas fa-heart"></i></p>
         </div>
     </footer>
+
+    <script>
+        // Mobile Navigation Toggle
+        const menuToggle = document.getElementById('menuToggle');
+        const closeNav = document.getElementById('closeNav');
+        const mobileNav = document.getElementById('mobileNav');
+        const navOverlay = document.getElementById('navOverlay');
+
+        function openNav() {
+            mobileNav.classList.add('active');
+            navOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeNavMenu() {
+            mobileNav.classList.remove('active');
+            navOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        menuToggle.addEventListener('click', openNav);
+        closeNav.addEventListener('click', closeNavMenu);
+        navOverlay.addEventListener('click', closeNavMenu);
+
+        // Close nav when a link is clicked (mobile)
+        const mobileNavLinks = mobileNav.querySelectorAll('a');
+        mobileNavLinks.forEach(link => {
+            link.addEventListener('click', closeNavMenu);
+        });
+    </script>
 </body>
 </html>

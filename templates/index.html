@@ -1,30 +1,91 @@
 {% extends 'base.html' %}
 {% block title %}Home - MyFoodCulture{% endblock %}
 {% block content %}
-    <section class="hero" style="padding: 1.2rem; margin-bottom: 2rem;">
-        <h2 style="margin-bottom: 0.5rem;">The Latest & Greatest</h2>
-        <p style="margin-bottom: 0;">Cozy Jain recipes for everyday life - from simple breakfasts to delightful desserts.</p>
+    <section class="hero">
+        <h2>The Latest & Greatest</h2>
+        <p>Cozy Jain recipes for everyday life - from simple breakfasts to delightful desserts.</p>
     </section>
-    <section class="featured">
-        <h3>Featured Jain Recipes</h3>
-        <div class="recipe-grid">
-            {% for recipe in recipes %}
-                <div class="recipe-card">
-                    {% if recipe.image_path %}
-                        <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
-                    {% else %}
-                        <img src="https://via.placeholder.com/400x220/A8E6CF/333333?text=No+Image" alt="{{ recipe.title }}">
-                    {% endif %}
-                    <h4>{{ recipe.title }}</h4>
-                    <p class="excerpt">{{ recipe.description | safe | truncate(150) }}</p>
-                    <a href="/recipe/{{ recipe.id }}" class="read-more">View Recipe <i class="fas fa-arrow-right"></i></a>
+
+    <div class="page-layout">
+        <!-- Left Sidebar Filter -->
+        <aside class="left-sidebar">
+            <h3>Filter Recipes</h3>
+
+            <div class="filter-section">
+                <h4>Categories</h4>
+                <ul class="filter-list">
+                    <li><a href="/category/breakfast"><i class="fas fa-coffee"></i> Breakfast</a></li>
+                    <li><a href="/category/snacks"><i class="fas fa-utensils"></i> Snacks</a></li>
+                    <li><a href="/category/lunch_dinner"><i class="fas fa-leaf"></i> Lunch/Dinner</a></li>
+                    <li><a href="/category/desserts"><i class="fas fa-ice-cream"></i> Desserts</a></li>
+                </ul>
+            </div>
+
+            <div class="filter-section">
+                <h4>Cuisines</h4>
+                <ul class="filter-list">
+                    <li><a href="/cuisine/asian"><i class="fas fa-globe-asia"></i> Asian</a></li>
+                    <li><a href="/cuisine/indian"><i class="fas fa-om"></i> Indian</a></li>
+                    <li><a href="/cuisine/mexican"><i class="fas fa-pepper-hot"></i> Mexican</a></li>
+                    <li><a href="/cuisine/italian"><i class="fas fa-pizza-slice"></i> Italian</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <section class="featured">
+                <h3>Featured Jain Recipes</h3>
+                <div class="recipe-grid">
+                    {% for recipe in recipes %}
+                        <div class="recipe-card">
+                            {% if recipe.image_path %}
+                                <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
+                            {% else %}
+                                <img src="https://via.placeholder.com/400x220/87A878/333333?text=No+Image" alt="{{ recipe.title }}">
+                            {% endif %}
+                            <div class="recipe-card-content">
+                                <h4>{{ recipe.title }}</h4>
+                                <div class="recipe-meta">
+                                    <span class="recipe-badge badge-category">
+                                        {% if recipe.category == 'breakfast' %}
+                                            <i class="fas fa-coffee"></i> Breakfast
+                                        {% elif recipe.category == 'snacks' %}
+                                            <i class="fas fa-utensils"></i> Snacks
+                                        {% elif recipe.category == 'lunch_dinner' %}
+                                            <i class="fas fa-leaf"></i> Lunch/Dinner
+                                        {% elif recipe.category == 'desserts' %}
+                                            <i class="fas fa-ice-cream"></i> Desserts
+                                        {% endif %}
+                                    </span>
+                                    {% if recipe.cuisine %}
+                                        <span class="recipe-badge badge-cuisine">
+                                            {% if recipe.cuisine == 'asian' %}
+                                                <i class="fas fa-globe-asia"></i> Asian
+                                            {% elif recipe.cuisine == 'indian' %}
+                                                <i class="fas fa-om"></i> Indian
+                                            {% elif recipe.cuisine == 'mexican' %}
+                                                <i class="fas fa-pepper-hot"></i> Mexican
+                                            {% elif recipe.cuisine == 'italian' %}
+                                                <i class="fas fa-pizza-slice"></i> Italian
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <p class="excerpt">{{ recipe.description | safe | truncate(100) }}</p>
+                                <a href="/recipe/{{ recipe.id }}" class="read-more">
+                                    View Recipe <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
                 </div>
-            {% endfor %}
+            </section>
         </div>
-    </section>
+    </div>
+
     <section class="about">
-        <h3 style="margin-bottom: 0.6rem; font-size: 1.5rem;">Hi! I'm Your Host</h3>
-        <p style="margin-bottom: 0.8rem; font-size: 0.95rem;">Welcome to MyFoodCulture. Explore authentic Jain recipes that honor tradition with fresh, simple ingredients. Favorites include lake days and dark chocolate - but no onions or garlic here!</p>
-        <a href="/admin" class="admin-link" style="padding: 0.6rem 1.2rem; border-radius: 6px; text-decoration: none; display: inline-block; margin-top: 0; background: #FFB347; border: 2px solid #FF9933;">Manage Recipes</a>
+        <h3>Hi! I'm Your Host</h3>
+        <p>Welcome to MyFoodCulture. Explore authentic Jain recipes that honor tradition with fresh, simple ingredients. Favorites include lake days and dark chocolate - but no onions or garlic here!</p>
     </section>
 {% endblock %}

@@ -1,33 +1,96 @@
 {% extends 'base.html' %}
 {% block title %}Search Results - MyFoodCulture{% endblock %}
 {% block content %}
-<div class="page-header" style="padding: 0.6rem; margin-bottom: 0.8rem;">
-    <h2 style="margin-bottom: 0.1rem; font-size: 1.3rem;">Search: "{{ query }}"</h2>
-    <p style="margin-bottom: 0; font-size: 0.8rem; color: #666;">{{ recipes|length }} result(s)</p>
+<div class="page-header">
+    <h2>Search: "{{ query }}"</h2>
+    <p>{{ recipes|length }} result(s) found</p>
 </div>
 
-{% if recipes %}
-    <div class="recipe-grid">
-        {% for recipe in recipes %}
-            <div class="recipe-card">
-                {% if recipe.image_path %}
-                    <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}" style="width: 100%; height: 220px; object-fit: cover;">
-                {% else %}
-                    <img src="https://via.placeholder.com/400x220/A8E6CF/333333?text=No+Image" alt="{{ recipe.title }}" style="width: 100%; height: 220px; object-fit: cover;">
-                {% endif %}
-                <h4>{{ recipe.title }}</h4>
-                <p class="excerpt">{{ recipe.description | safe | truncate(120) }}</p>
-                <a href="/recipe/{{ recipe.id }}" class="read-more">View Recipe <i class="fas fa-arrow-right"></i></a>
-            </div>
-        {% endfor %}
-    </div>
-{% else %}
-    <div class="no-recipes" style="padding: 1.5rem;">
-        <p><i class="fas fa-search"></i> No recipes found for "{{ query }}". Try a different search term!</p>
-    </div>
-{% endif %}
+<div class="page-layout">
+    <!-- Left Sidebar Filter -->
+    <aside class="left-sidebar">
+        <h3>Filter Recipes</h3>
 
-<div style="text-align: center; margin-top: 1.5rem;">
-    <a href="/" class="back-link"><i class="fas fa-home"></i> Back to Home</a>
+        <div class="filter-section">
+            <h4>Categories</h4>
+            <ul class="filter-list">
+                <li><a href="/category/breakfast"><i class="fas fa-coffee"></i> Breakfast</a></li>
+                <li><a href="/category/snacks"><i class="fas fa-utensils"></i> Snacks</a></li>
+                <li><a href="/category/lunch_dinner"><i class="fas fa-leaf"></i> Lunch/Dinner</a></li>
+                <li><a href="/category/desserts"><i class="fas fa-ice-cream"></i> Desserts</a></li>
+            </ul>
+        </div>
+
+        <div class="filter-section">
+            <h4>Cuisines</h4>
+            <ul class="filter-list">
+                <li><a href="/cuisine/asian"><i class="fas fa-globe-asia"></i> Asian</a></li>
+                <li><a href="/cuisine/indian"><i class="fas fa-om"></i> Indian</a></li>
+                <li><a href="/cuisine/mexican"><i class="fas fa-pepper-hot"></i> Mexican</a></li>
+                <li><a href="/cuisine/italian"><i class="fas fa-pizza-slice"></i> Italian</a></li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        {% if recipes %}
+            <div class="recipe-grid">
+                {% for recipe in recipes %}
+                    <div class="recipe-card">
+                        {% if recipe.image_path %}
+                            <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
+                        {% else %}
+                            <img src="https://via.placeholder.com/400x220/87A878/333333?text=No+Image" alt="{{ recipe.title }}">
+                        {% endif %}
+                        <div class="recipe-card-content">
+                            <h4>{{ recipe.title }}</h4>
+                            <div class="recipe-meta">
+                                <span class="recipe-badge badge-category">
+                                    {% if recipe.category == 'breakfast' %}
+                                        <i class="fas fa-coffee"></i> Breakfast
+                                    {% elif recipe.category == 'snacks' %}
+                                        <i class="fas fa-utensils"></i> Snacks
+                                    {% elif recipe.category == 'lunch_dinner' %}
+                                        <i class="fas fa-leaf"></i> Lunch/Dinner
+                                    {% elif recipe.category == 'desserts' %}
+                                        <i class="fas fa-ice-cream"></i> Desserts
+                                    {% endif %}
+                                </span>
+                                {% if recipe.cuisine %}
+                                    <span class="recipe-badge badge-cuisine">
+                                        {% if recipe.cuisine == 'asian' %}
+                                            <i class="fas fa-globe-asia"></i> Asian
+                                        {% elif recipe.cuisine == 'indian' %}
+                                            <i class="fas fa-om"></i> Indian
+                                        {% elif recipe.cuisine == 'mexican' %}
+                                            <i class="fas fa-pepper-hot"></i> Mexican
+                                        {% elif recipe.cuisine == 'italian' %}
+                                            <i class="fas fa-pizza-slice"></i> Italian
+                                        {% endif %}
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <p class="excerpt">{{ recipe.description | safe | truncate(100) }}</p>
+                            <a href="/recipe/{{ recipe.id }}" class="read-more">
+                                View Recipe <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-recipes">
+                <i class="fas fa-search"></i>
+                <p>No recipes found for "{{ query }}". Try a different search term!</p>
+            </div>
+        {% endif %}
+
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="/" class="back-link">
+                <i class="fas fa-home"></i> Back to Home
+            </a>
+        </div>
+    </div>
 </div>
 {% endblock %}
