@@ -1,6 +1,6 @@
 import os
 import mysql.connector
-from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, Response
+from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, Response, jsonify
 from werkzeug.utils import secure_filename
 from functools import wraps
 
@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 app.secret_key = 'supersecretkey'  # Change in production
 app.config['UPLOAD_FOLDER'] = 'uploads'
-app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 # Load environment variables
 from dotenv import load_dotenv
@@ -31,6 +31,63 @@ def get_db_connection():
         password=os.getenv('DB_PASSWORD'),
         database=os.getenv('DB_NAME')
     )
+
+
+# Helper function to get recipe images
+def get_recipe_images(recipe_id, conn=None):
+    """Get all images for a recipe"""
+    close_conn = False
+    if conn is None:
+        conn = get_db_connection()
+        close_conn = True
+
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("""
+        SELECT * FROM recipe_images 
+        WHERE recipe_id = %s 
+        ORDER BY is_primary DESC, display_order ASC
+    """, (recipe_id,))
+    images = cursor.fetchall()
+    cursor.close()
+
+    if close_conn:
+        conn.close()
+
+    return images
+
+
+# Helper function to add recipe images
+def add_recipe_images(recipe_id, files):
+    """Add multiple images for a recipe"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    saved_images = []
+    for idx, file in enumerate(files):
+        if file and file.filename and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            # Add timestamp to filename to avoid conflicts
+            import time
+            timestamp = int(time.time())
+            filename = f"{timestamp}_{filename}"
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+
+            # Insert into database
+            is_primary = (idx == 0)  # First image is primary
+            cursor.execute("""
+                INSERT INTO recipe_images (recipe_id, image_path, is_primary, display_order)
+                VALUES (%s, %s, %s, %s)
+            """, (recipe_id, filepath, is_primary, idx))
+
+            saved_images.append(filepath)
+            print(f"📷 Image {idx + 1} saved: {filepath}")
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return saved_images
 
 
 # Basic auth decorator
@@ -58,12 +115,48 @@ def index():
     print("\n📄 Loading homepage...")
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
+
+    # Get latest recipes
     cursor.execute("SELECT * FROM recipes ORDER BY id DESC LIMIT 6")
-    recipes = cursor.fetchall()
+    latest_recipes = cursor.fetchall()
+
+    # Get recipes by category
+    cursor.execute("SELECT * FROM recipes WHERE category = 'breakfast' ORDER BY id DESC")
+    breakfast_recipes = cursor.fetchall()
+
+    cursor.execute("SELECT * FROM recipes WHERE category = 'snacks' ORDER BY id DESC")
+    snacks_recipes = cursor.fetchall()
+
+    cursor.execute("SELECT * FROM recipes WHERE category = 'lunch_dinner' ORDER BY id DESC")
+    lunch_dinner_recipes = cursor.fetchall()
+
+    cursor.execute("SELECT * FROM recipes WHERE category = 'desserts' ORDER BY id DESC")
+    desserts_recipes = cursor.fetchall()
+
+    # Get quick recipes (15 minutes or less)
+    cursor.execute(
+        "SELECT * FROM recipes WHERE cooking_time_minutes <= 15 AND cooking_time_minutes IS NOT NULL ORDER BY cooking_time_minutes ASC")
+    quick_recipes = cursor.fetchall()
+
+    # Add images to recipes
+    for recipe_list in [latest_recipes, breakfast_recipes, snacks_recipes, lunch_dinner_recipes, desserts_recipes,
+                        quick_recipes]:
+        for recipe in recipe_list:
+            images = get_recipe_images(recipe['id'], conn)
+            recipe['images'] = images
+            recipe['primary_image'] = images[0] if images else None
+
     cursor.close()
     conn.close()
-    print(f"✅ Loaded {len(recipes)} recipes for homepage\n")
-    return render_template('index.html', recipes=recipes)
+
+    print(f"✅ Loaded recipes for homepage\n")
+    return render_template('index.html',
+                           latest_recipes=latest_recipes,
+                           breakfast_recipes=breakfast_recipes,
+                           snacks_recipes=snacks_recipes,
+                           lunch_dinner_recipes=lunch_dinner_recipes,
+                           desserts_recipes=desserts_recipes,
+                           quick_recipes=quick_recipes)
 
 
 @app.route('/about')
@@ -79,6 +172,13 @@ def category(cat):
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM recipes WHERE category = %s", (cat,))
     recipes = cursor.fetchall()
+
+    # Add images
+    for recipe in recipes:
+        images = get_recipe_images(recipe['id'], conn)
+        recipe['images'] = images
+        recipe['primary_image'] = images[0] if images else None
+
     cursor.close()
     conn.close()
     print(f"✅ Found {len(recipes)} recipes in {cat}\n")
@@ -92,6 +192,13 @@ def cuisine(cuisine_type):
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM recipes WHERE cuisine = %s", (cuisine_type,))
     recipes = cursor.fetchall()
+
+    # Add images
+    for recipe in recipes:
+        images = get_recipe_images(recipe['id'], conn)
+        recipe['images'] = images
+        recipe['primary_image'] = images[0] if images else None
+
     cursor.close()
     conn.close()
     print(f"✅ Found {len(recipes)} recipes in {cuisine_type} cuisine\n")
@@ -117,6 +224,13 @@ def search():
         OR cuisine LIKE %s
     """, (f'%{query}%', f'%{query}%', f'%{query}%', f'%{query}%', f'%{query}%', f'%{query}%'))
     recipes = cursor.fetchall()
+
+    # Add images
+    for recipe in recipes:
+        images = get_recipe_images(recipe['id'], conn)
+        recipe['images'] = images
+        recipe['primary_image'] = images[0] if images else None
+
     cursor.close()
     conn.close()
     print(f"✅ Found {len(recipes)} recipes\n")
@@ -152,6 +266,13 @@ def search_by_ingredients():
     query = f"SELECT * FROM recipes WHERE {' OR '.join(conditions)} ORDER BY id DESC"
     cursor.execute(query, params)
     recipes = cursor.fetchall()
+
+    # Add images
+    for recipe in recipes:
+        images = get_recipe_images(recipe['id'], conn)
+        recipe['images'] = images
+        recipe['primary_image'] = images[0] if images else None
+
     cursor.close()
     conn.close()
 
@@ -180,6 +301,13 @@ def search_by_time(time_range):
     cursor.execute("SELECT * FROM recipes WHERE cooking_time_minutes <= %s ORDER BY cooking_time_minutes ASC",
                    (max_minutes,))
     recipes = cursor.fetchall()
+
+    # Add images
+    for recipe in recipes:
+        images = get_recipe_images(recipe['id'], conn)
+        recipe['images'] = images
+        recipe['primary_image'] = images[0] if images else None
+
     cursor.close()
     conn.close()
 
@@ -209,7 +337,8 @@ def admin():
         ingredients = request.form.get('ingredients')
         directions = request.form.get('directions')
         cooking_time = request.form.get('cooking_time_minutes')
-        file = request.files.get('image')
+        added_by = request.form.get('added_by', 'nitya').strip() or 'nitya'  # Default to 'nitya'
+        files = request.files.getlist('images')  # Multiple files
 
         # Debug output
         print(f"\n📋 Form Data Received:")
@@ -217,10 +346,8 @@ def admin():
         print(f"   Category: {category}")
         print(f"   Cuisine: {cuisine}")
         print(f"   Cooking Time: {cooking_time}")
-        print(f"   Description: {description[:50] if description else 'None'}...")
-        print(f"   Ingredients: {ingredients[:50] if ingredients else 'None'}...")
-        print(f"   Directions: {directions[:50] if directions else 'None'}...")
-        print(f"   Image file: {file.filename if file and file.filename else 'No file'}")
+        print(f"   Added By: {added_by}")
+        print(f"   Number of images: {len(files)}")
 
         # Validate required fields
         missing_fields = []
@@ -246,28 +373,17 @@ def admin():
 
         print("\n✅ All required fields present")
 
-        # Handle cooking time - set to NULL if empty
+        # Handle cooking time
         cooking_time_value = int(cooking_time) if cooking_time and cooking_time.strip() else None
 
-        # Handle image upload
-        image_path = None
-        if file and file.filename and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(filepath)
-            image_path = filepath
-            print(f"📷 Image saved to: {image_path}")
-        else:
-            print("ℹ️  No valid image uploaded")
-
-        # Insert into database
+        # Insert recipe into database
         try:
             print("\n💾 Attempting to save to database...")
             conn = get_db_connection()
             cursor = conn.cursor()
 
-            sql = "INSERT INTO recipes (title, category, cuisine, description, ingredients, directions, cooking_time_minutes, image_path) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-            values = (title, category, cuisine, description, ingredients, directions, cooking_time_value, image_path)
+            sql = "INSERT INTO recipes (title, category, cuisine, description, ingredients, directions, cooking_time_minutes, added_by) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+            values = (title, category, cuisine, description, ingredients, directions, cooking_time_value, added_by)
 
             cursor.execute(sql, values)
             conn.commit()
@@ -278,6 +394,10 @@ def admin():
             cursor.close()
             conn.close()
 
+            # Handle multiple images
+            if files and any(f.filename for f in files):
+                add_recipe_images(recipe_id, files)
+
             flash('Recipe added successfully!')
             print("=" * 60 + "\n")
             return redirect(url_for('admin'))
@@ -285,16 +405,12 @@ def admin():
         except mysql.connector.Error as db_err:
             error_msg = f"❌ DATABASE ERROR: {str(db_err)}"
             print(f"\n{error_msg}")
-            print(f"Error Code: {db_err.errno}")
-            print(f"SQL State: {db_err.sqlstate}")
-            print("=" * 60 + "\n")
             flash(f'Database error: {str(db_err)}')
             return redirect(url_for('admin'))
 
         except Exception as e:
             error_msg = f"❌ UNEXPECTED ERROR: {str(e)}"
             print(f"\n{error_msg}")
-            print("=" * 60 + "\n")
             flash(f'Error: {str(e)}')
             return redirect(url_for('admin'))
 
@@ -305,6 +421,13 @@ def admin():
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT * FROM recipes ORDER BY id DESC")
         recipes = cursor.fetchall()
+
+        # Add images to recipes
+        for recipe in recipes:
+            images = get_recipe_images(recipe['id'], conn)
+            recipe['images'] = images
+            recipe['image_count'] = len(images)
+
         cursor.close()
         conn.close()
         print(f"✅ Loaded {len(recipes)} recipes for admin panel\n")
@@ -328,6 +451,13 @@ def admin_search():
         (f'%{query}%', f'%{query}%')
     )
     recipes = cursor.fetchall()
+
+    # Add images
+    for recipe in recipes:
+        images = get_recipe_images(recipe['id'], conn)
+        recipe['images'] = images
+        recipe['image_count'] = len(images)
+
     cursor.close()
     conn.close()
     print(f"✅ Found {len(recipes)} recipes\n")
@@ -341,10 +471,17 @@ def recipe(id):
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM recipes WHERE id = %s", (id,))
     recipe = cursor.fetchone()
+
+    if recipe:
+        # Get all images for this recipe
+        recipe['images'] = get_recipe_images(id, conn)
+        recipe['primary_image'] = recipe['images'][0] if recipe['images'] else None
+
     cursor.close()
     conn.close()
+
     if recipe:
-        print(f"✅ Loaded recipe: {recipe['title']}\n")
+        print(f"✅ Loaded recipe: {recipe['title']} with {len(recipe['images'])} images\n")
         return render_template('recipe.html', recipe=recipe)
     else:
         print(f"❌ Recipe {id} not found\n")
@@ -365,11 +502,8 @@ def edit_recipe(id):
         ingredients = request.form.get('ingredients')
         directions = request.form.get('directions')
         cooking_time = request.form.get('cooking_time_minutes')
-        file = request.files.get('image')
-
-        print(f"   New title: {title}")
-        print(f"   New cuisine: {cuisine}")
-        print(f"   New cooking time: {cooking_time}")
+        added_by = request.form.get('added_by', 'nitya').strip() or 'nitya'  # Default to 'nitya'
+        files = request.files.getlist('images')
 
         # Validate required fields
         missing_fields = []
@@ -377,7 +511,6 @@ def edit_recipe(id):
             missing_fields.append('title')
         if not category:
             missing_fields.append('category')
-        # Cuisine is optional for breakfast and desserts
         if not cuisine and category not in ['breakfast', 'desserts']:
             missing_fields.append('cuisine')
         if not description:
@@ -388,42 +521,30 @@ def edit_recipe(id):
             missing_fields.append('directions')
 
         if missing_fields:
-            print(f"❌ Missing required fields: {', '.join(missing_fields)}")
             flash(f'Missing required fields: {", ".join(missing_fields)}')
             return redirect(url_for('edit_recipe', id=id))
 
-        # Handle cooking time
         cooking_time_value = int(cooking_time) if cooking_time and cooking_time.strip() else None
 
         try:
             conn = get_db_connection()
-            cursor = conn.cursor(dictionary=True)
-
-            # Get current recipe to check for existing image
-            cursor.execute("SELECT image_path FROM recipes WHERE id = %s", (id,))
-            current_recipe = cursor.fetchone()
-            image_path = current_recipe['image_path'] if current_recipe else None
-
-            # Handle image upload
-            if file and file.filename and allowed_file(file.filename):
-                # Delete old image if exists
-                if image_path and os.path.exists(image_path):
-                    os.remove(image_path)
-                    print(f"🗑️  Deleted old image: {image_path}")
-
-                filename = secure_filename(file.filename)
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                print(f"📷 New image saved: {image_path}")
+            cursor = conn.cursor()
 
             # Update recipe
-            cursor.execute(
-                "UPDATE recipes SET title=%s, category=%s, cuisine=%s, description=%s, ingredients=%s, directions=%s, cooking_time_minutes=%s, image_path=%s WHERE id=%s",
-                (title, category, cuisine, description, ingredients, directions, cooking_time_value, image_path, id)
-            )
+            cursor.execute("""
+                UPDATE recipes 
+                SET title=%s, category=%s, cuisine=%s, description=%s, 
+                    ingredients=%s, directions=%s, cooking_time_minutes=%s, added_by=%s 
+                WHERE id=%s
+            """, (title, category, cuisine, description, ingredients, directions, cooking_time_value, added_by, id))
+
             conn.commit()
             cursor.close()
             conn.close()
+
+            # Handle new images if uploaded
+            if files and any(f.filename for f in files):
+                add_recipe_images(id, files)
 
             print(f"✅ Recipe {id} updated successfully\n")
             flash('Recipe updated successfully!')
@@ -434,27 +555,65 @@ def edit_recipe(id):
             flash(f'Error updating recipe: {str(e)}')
             return redirect(url_for('edit_recipe', id=id))
 
-    # GET request - load recipe for editing
+    # GET request
     print(f"\n🔍 Loading recipe {id} for editing...")
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM recipes WHERE id = %s", (id,))
     recipe = cursor.fetchone()
 
-    # Get all recipes for the list
+    if recipe:
+        recipe['images'] = get_recipe_images(id, conn)
+
     cursor.execute("SELECT * FROM recipes ORDER BY id DESC")
     recipes = cursor.fetchall()
+
+    for r in recipes:
+        r['images'] = get_recipe_images(r['id'], conn)
+        r['image_count'] = len(r['images'])
 
     cursor.close()
     conn.close()
 
     if recipe:
-        print(f"✅ Loaded recipe: {recipe['title']}\n")
         return render_template('admin.html', edit_recipe=recipe, recipes=recipes)
     else:
-        print(f"❌ Recipe {id} not found\n")
         flash('Recipe not found!')
         return redirect(url_for('admin'))
+
+
+@app.route('/admin/delete-image/<int:image_id>', methods=['POST'])
+@auth_required
+def delete_image(image_id):
+    """Delete a single image from a recipe"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Get image info
+        cursor.execute("SELECT * FROM recipe_images WHERE id = %s", (image_id,))
+        image = cursor.fetchone()
+
+        if image:
+            # Delete file if exists
+            if os.path.exists(image['image_path']):
+                os.remove(image['image_path'])
+
+            # Delete from database
+            cursor.execute("DELETE FROM recipe_images WHERE id = %s", (image_id,))
+            conn.commit()
+
+            flash('Image deleted successfully!')
+        else:
+            flash('Image not found!')
+
+        cursor.close()
+        conn.close()
+
+    except Exception as e:
+        flash(f'Error deleting image: {str(e)}')
+
+    return redirect(request.referrer or url_for('admin'))
 
 
 @app.route('/admin/delete/<int:id>')
@@ -466,14 +625,13 @@ def delete_recipe(id):
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
-        # Get image path before deleting
-        cursor.execute("SELECT image_path FROM recipes WHERE id = %s", (id,))
-        recipe = cursor.fetchone()
+        # Get and delete all images
+        images = get_recipe_images(id, conn)
+        for image in images:
+            if os.path.exists(image['image_path']):
+                os.remove(image['image_path'])
 
-        if recipe and recipe['image_path'] and os.path.exists(recipe['image_path']):
-            os.remove(recipe['image_path'])
-            print(f"   Deleted image: {recipe['image_path']}")
-
+        # Delete recipe (cascade will delete images from DB)
         cursor.execute("DELETE FROM recipes WHERE id = %s", (id,))
         conn.commit()
         cursor.close()

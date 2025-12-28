@@ -75,60 +75,204 @@
                 </form>
             </section>
 
-            <section class="featured">
-                <h3>Featured Jain Recipes</h3>
-                <div class="recipe-grid">
-                    {% for recipe in recipes %}
-                        <div class="recipe-card">
-                            {% if recipe.image_path %}
-                                <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
-                            {% else %}
-                                <img src="https://via.placeholder.com/400x220/87A878/333333?text=No+Image" alt="{{ recipe.title }}">
-                            {% endif %}
-                            <div class="recipe-card-content">
-                                <h4>{{ recipe.title }}</h4>
-                                <div class="recipe-meta">
-                                    <span class="recipe-badge badge-category">
-                                        {% if recipe.category == 'breakfast' %}
-                                            <i class="fas fa-coffee"></i> Breakfast
-                                        {% elif recipe.category == 'snacks' %}
-                                            <i class="fas fa-utensils"></i> Snacks
-                                        {% elif recipe.category == 'lunch_dinner' %}
-                                            <i class="fas fa-leaf"></i> Lunch/Dinner
-                                        {% elif recipe.category == 'desserts' %}
-                                            <i class="fas fa-ice-cream"></i> Desserts
+            <!-- Netflix-Style Swimlanes -->
+
+            <!-- Latest Recipes -->
+            {% if latest_recipes %}
+            <section class="recipe-swimlane">
+                <div class="swimlane-header">
+                    <h3><i class="fas fa-fire"></i> Latest Recipes</h3>
+                    <a href="#" class="view-all">View All →</a>
+                </div>
+                <div class="swimlane-scroll">
+                    {% for recipe in latest_recipes %}
+                        <div class="recipe-card-horizontal">
+                            <a href="/recipe/{{ recipe.id }}" style="text-decoration: none; color: inherit;">
+                                {% if recipe.image_path %}
+                                    <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
+                                {% else %}
+                                    <img src="https://via.placeholder.com/300x200/87A878/333333?text=No+Image" alt="{{ recipe.title }}">
+                                {% endif %}
+                                <div class="card-info">
+                                    <h4>{{ recipe.title }}</h4>
+                                    <div class="recipe-meta-small">
+                                        {% if recipe.cooking_time_minutes %}
+                                            <span><i class="fas fa-clock"></i> {{ recipe.cooking_time_minutes }} min</span>
                                         {% endif %}
-                                    </span>
-                                    {% if recipe.cuisine %}
-                                        <span class="recipe-badge badge-cuisine">
-                                            {% if recipe.cuisine == 'asian' %}
-                                                <i class="fas fa-globe-asia"></i> Asian
-                                            {% elif recipe.cuisine == 'indian' %}
-                                                <i class="fas fa-om"></i> Indian
-                                            {% elif recipe.cuisine == 'mexican' %}
-                                                <i class="fas fa-pepper-hot"></i> Mexican
-                                            {% elif recipe.cuisine == 'italian' %}
-                                                <i class="fas fa-pizza-slice"></i> Italian
-                                            {% elif recipe.cuisine == 'mediterranean' %}
-                                                <i class="fas fa-fish"></i> Mediterranean
-                                            {% endif %}
-                                        </span>
-                                    {% endif %}
-                                    {% if recipe.cooking_time_minutes %}
-                                        <span class="recipe-badge" style="background: #f0f0f0; color: #333;">
-                                            <i class="fas fa-clock"></i> {{ recipe.cooking_time_minutes }} min
-                                        </span>
-                                    {% endif %}
+                                    </div>
                                 </div>
-                                <p class="excerpt">{{ recipe.description | safe | truncate(100) }}</p>
-                                <a href="/recipe/{{ recipe.id }}" class="read-more">
-                                    View Recipe <i class="fas fa-arrow-right"></i>
-                                </a>
-                            </div>
+                            </a>
                         </div>
                     {% endfor %}
                 </div>
             </section>
+            {% endif %}
+
+            <!-- Quick Recipes (15 min or less) -->
+            {% if quick_recipes %}
+            <section class="recipe-swimlane">
+                <div class="swimlane-header">
+                    <h3><i class="fas fa-bolt"></i> Quick & Easy (15 min or less)</h3>
+                    <a href="/search-by-time/15min" class="view-all">View All →</a>
+                </div>
+                <div class="swimlane-scroll">
+                    {% for recipe in quick_recipes %}
+                        <div class="recipe-card-horizontal">
+                            <a href="/recipe/{{ recipe.id }}" style="text-decoration: none; color: inherit;">
+                                {% if recipe.image_path %}
+                                    <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
+                                {% else %}
+                                    <img src="https://via.placeholder.com/300x200/87A878/333333?text=No+Image" alt="{{ recipe.title }}">
+                                {% endif %}
+                                <div class="card-info">
+                                    <h4>{{ recipe.title }}</h4>
+                                    <div class="recipe-meta-small">
+                                        <span><i class="fas fa-clock"></i> {{ recipe.cooking_time_minutes }} min</span>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- Breakfast Recipes -->
+            {% if breakfast_recipes %}
+            <section class="recipe-swimlane">
+                <div class="swimlane-header">
+                    <h3><i class="fas fa-coffee"></i> Breakfast</h3>
+                    <a href="/category/breakfast" class="view-all">View All →</a>
+                </div>
+                <div class="swimlane-scroll">
+                    {% for recipe in breakfast_recipes %}
+                        <div class="recipe-card-horizontal">
+                            <a href="/recipe/{{ recipe.id }}" style="text-decoration: none; color: inherit;">
+                                {% if recipe.image_path %}
+                                    <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
+                                {% else %}
+                                    <img src="https://via.placeholder.com/300x200/87A878/333333?text=No+Image" alt="{{ recipe.title }}">
+                                {% endif %}
+                                <div class="card-info">
+                                    <h4>{{ recipe.title }}</h4>
+                                    <div class="recipe-meta-small">
+                                        {% if recipe.cooking_time_minutes %}
+                                            <span><i class="fas fa-clock"></i> {{ recipe.cooking_time_minutes }} min</span>
+                                        {% endif %}
+                                        {% if recipe.cuisine %}
+                                            <span><i class="fas fa-globe"></i> {{ recipe.cuisine|capitalize }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- Snacks -->
+            {% if snacks_recipes %}
+            <section class="recipe-swimlane">
+                <div class="swimlane-header">
+                    <h3><i class="fas fa-utensils"></i> Snacks</h3>
+                    <a href="/category/snacks" class="view-all">View All →</a>
+                </div>
+                <div class="swimlane-scroll">
+                    {% for recipe in snacks_recipes %}
+                        <div class="recipe-card-horizontal">
+                            <a href="/recipe/{{ recipe.id }}" style="text-decoration: none; color: inherit;">
+                                {% if recipe.image_path %}
+                                    <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
+                                {% else %}
+                                    <img src="https://via.placeholder.com/300x200/87A878/333333?text=No+Image" alt="{{ recipe.title }}">
+                                {% endif %}
+                                <div class="card-info">
+                                    <h4>{{ recipe.title }}</h4>
+                                    <div class="recipe-meta-small">
+                                        {% if recipe.cooking_time_minutes %}
+                                            <span><i class="fas fa-clock"></i> {{ recipe.cooking_time_minutes }} min</span>
+                                        {% endif %}
+                                        {% if recipe.cuisine %}
+                                            <span><i class="fas fa-globe"></i> {{ recipe.cuisine|capitalize }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- Lunch/Dinner -->
+            {% if lunch_dinner_recipes %}
+            <section class="recipe-swimlane">
+                <div class="swimlane-header">
+                    <h3><i class="fas fa-leaf"></i> Lunch & Dinner</h3>
+                    <a href="/category/lunch_dinner" class="view-all">View All →</a>
+                </div>
+                <div class="swimlane-scroll">
+                    {% for recipe in lunch_dinner_recipes %}
+                        <div class="recipe-card-horizontal">
+                            <a href="/recipe/{{ recipe.id }}" style="text-decoration: none; color: inherit;">
+                                {% if recipe.image_path %}
+                                    <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
+                                {% else %}
+                                    <img src="https://via.placeholder.com/300x200/87A878/333333?text=No+Image" alt="{{ recipe.title }}">
+                                {% endif %}
+                                <div class="card-info">
+                                    <h4>{{ recipe.title }}</h4>
+                                    <div class="recipe-meta-small">
+                                        {% if recipe.cooking_time_minutes %}
+                                            <span><i class="fas fa-clock"></i> {{ recipe.cooking_time_minutes }} min</span>
+                                        {% endif %}
+                                        {% if recipe.cuisine %}
+                                            <span><i class="fas fa-globe"></i> {{ recipe.cuisine|capitalize }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
+            <!-- Desserts -->
+            {% if desserts_recipes %}
+            <section class="recipe-swimlane">
+                <div class="swimlane-header">
+                    <h3><i class="fas fa-ice-cream"></i> Desserts</h3>
+                    <a href="/category/desserts" class="view-all">View All →</a>
+                </div>
+                <div class="swimlane-scroll">
+                    {% for recipe in desserts_recipes %}
+                        <div class="recipe-card-horizontal">
+                            <a href="/recipe/{{ recipe.id }}" style="text-decoration: none; color: inherit;">
+                                {% if recipe.image_path %}
+                                    <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
+                                {% else %}
+                                    <img src="https://via.placeholder.com/300x200/87A878/333333?text=No+Image" alt="{{ recipe.title }}">
+                                {% endif %}
+                                <div class="card-info">
+                                    <h4>{{ recipe.title }}</h4>
+                                    <div class="recipe-meta-small">
+                                        {% if recipe.cooking_time_minutes %}
+                                            <span><i class="fas fa-clock"></i> {{ recipe.cooking_time_minutes }} min</span>
+                                        {% endif %}
+                                        {% if recipe.cuisine %}
+                                            <span><i class="fas fa-globe"></i> {{ recipe.cuisine|capitalize }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+
         </div>
     </div>
 
@@ -136,4 +280,126 @@
         <h3>Hi! I'm Your Host</h3>
         <p>Welcome to MyFoodCulture. Explore authentic Jain recipes that honor tradition with fresh, simple ingredients. Favorites include lake days and dark chocolate - but no onions or garlic here!</p>
     </section>
+
+    <style>
+        /* Netflix-Style Swimlane Styles */
+        .recipe-swimlane {
+            margin-bottom: 3rem;
+        }
+
+        .swimlane-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .swimlane-header h3 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #333;
+        }
+
+        .view-all {
+            color: #87A878;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .view-all:hover {
+            color: #6B8A5F;
+        }
+
+        .swimlane-scroll {
+            display: flex;
+            overflow-x: auto;
+            gap: 1rem;
+            padding: 0.5rem 0;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .swimlane-scroll::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .swimlane-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .swimlane-scroll::-webkit-scrollbar-thumb {
+            background: #87A878;
+            border-radius: 10px;
+        }
+
+        .swimlane-scroll::-webkit-scrollbar-thumb:hover {
+            background: #6B8A5F;
+        }
+
+        .recipe-card-horizontal {
+            min-width: 280px;
+            max-width: 280px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+
+        .recipe-card-horizontal:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .recipe-card-horizontal img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+        }
+
+        .recipe-card-horizontal .card-info {
+            padding: 1rem;
+        }
+
+        .recipe-card-horizontal h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.1rem;
+            color: #333;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .recipe-meta-small {
+            display: flex;
+            gap: 0.75rem;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .recipe-meta-small span {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .recipe-meta-small i {
+            color: #87A878;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .recipe-card-horizontal {
+                min-width: 240px;
+                max-width: 240px;
+            }
+
+            .swimlane-header h3 {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
 {% endblock %}

@@ -37,6 +37,12 @@
                 <strong>Cooking Time (minutes - optional):</strong>
                 <input type="number" name="cooking_time_minutes" value="{{ edit_recipe.cooking_time_minutes if edit_recipe and edit_recipe.cooking_time_minutes else '' }}" min="1" placeholder="e.g. 30">
             </label>
+
+            <label>
+                <strong>Recipe Added By:</strong>
+                <input type="text" name="added_by" value="{{ edit_recipe.added_by if edit_recipe and edit_recipe.added_by else 'nitya' }}" placeholder="nitya">
+                <small style="color: #666;">Leave blank to default to "nitya"</small>
+            </label>
         </div>
 
         <label>
@@ -56,8 +62,9 @@
 
         <div class="form-row">
             <label>
-                <strong>Recipe Image (optional):</strong>
-                <input type="file" name="image" accept="image/*">
+                <strong>Recipe Images (You can select multiple):</strong>
+                <input type="file" name="images" accept="image/*" multiple>
+                <small style="color: #666;">Hold Ctrl/Cmd to select multiple images. First image will be the primary image.</small>
             </label>
 
             <div style="display: flex; align-items: flex-end;">
@@ -67,10 +74,24 @@
             </div>
         </div>
 
-        {% if edit_recipe and edit_recipe.image_path %}
-            <div class="current-image">
-                <p style="margin: 0 0 0.5rem 0; font-weight: 600;"><strong>Current Image:</strong></p>
-                <img src="{{ url_for('uploaded_file', filename=edit_recipe.image_path.split('/')[-1]) }}" width="150" alt="Current recipe image">
+        {% if edit_recipe and edit_recipe.images %}
+            <div class="current-images">
+                <p style="margin: 1rem 0 0.5rem 0; font-weight: 600;"><strong>Current Images ({{ edit_recipe.images|length }}):</strong></p>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    {% for image in edit_recipe.images %}
+                        <div style="position: relative; display: inline-block;">
+                            <img src="{{ url_for('uploaded_file', filename=image.image_path.split('/')[-1]) }}" width="150" alt="Recipe image" style="border-radius: 4px; border: {{ '3px solid #87A878' if image.is_primary else '1px solid #ddd' }};">
+                            {% if image.is_primary %}
+                                <span style="position: absolute; top: 5px; left: 5px; background: #87A878; color: white; padding: 2px 8px; border-radius: 3px; font-size: 0.75rem; font-weight: bold;">PRIMARY</span>
+                            {% endif %}
+                            <form method="POST" action="{{ url_for('delete_image', image_id=image.id) }}" style="position: absolute; top: 5px; right: 5px;" onsubmit="return confirm('Delete this image?');">
+                                <button type="submit" style="background: #ff4444; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 0.75rem;">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    {% endfor %}
+                </div>
             </div>
         {% endif %}
     </form>
@@ -84,14 +105,19 @@
 
     {% if recipes %}
         <ul class="recipe-list">
-            {% for recipe in recipes %}
+            {% for rec in recipes %}
                 <li>
-                    <span class="recipe-title">{{ recipe.title }}</span>
+                    <span class="recipe-title">
+                        {{ rec.title }}
+                        {% if rec.image_count is defined and rec.image_count %}
+                            <span style="background: #87A878; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.7rem; margin-left: 8px;">{{ rec.image_count }} 📷</span>
+                        {% endif %}
+                    </span>
                     <div class="recipe-actions">
-                        <a href="{{ url_for('edit_recipe', id=recipe.id) }}">
+                        <a href="{{ url_for('edit_recipe', id=rec.id) }}">
                             <i class="fas fa-edit"></i> Edit
                         </a>
-                        <a href="{{ url_for('delete_recipe', id=recipe.id) }}" onclick="return confirm('Delete this recipe?')">
+                        <a href="{{ url_for('delete_recipe', id=rec.id) }}" onclick="return confirm('Delete this recipe and all its images?')">
                             <i class="fas fa-trash"></i> Delete
                         </a>
                     </div>
@@ -107,18 +133,14 @@
 </div>
 
 <script>
-    console.log('Admin page loaded');
-
-    const form = document.querySelector('form.admin-form');
     const categorySelect = document.getElementById('categorySelect');
     const cuisineSelect = document.getElementById('cuisineSelect');
     const cuisineOptional = document.getElementById('cuisineOptional');
 
-    // Function to update cuisine requirement based on category
     function updateCuisineRequirement() {
         const category = categorySelect.value;
         const isOptional = category === 'breakfast' || category === 'desserts';
-        
+
         if (isOptional) {
             cuisineSelect.removeAttribute('required');
             cuisineOptional.style.display = 'inline';
@@ -128,21 +150,7 @@
         }
     }
 
-    // Set initial state
     updateCuisineRequirement();
-
-    // Update when category changes
     categorySelect.addEventListener('change', updateCuisineRequirement);
-
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            console.log('🚀 FORM IS SUBMITTING!');
-            console.log('Title:', document.querySelector('input[name="title"]').value);
-            console.log('Category:', document.querySelector('select[name="category"]').value);
-            console.log('Cuisine:', document.querySelector('select[name="cuisine"]').value);
-            console.log('Cooking Time:', document.querySelector('input[name="cooking_time_minutes"]').value);
-            console.log('Description:', document.querySelector('textarea[name="description"]').value.substring(0, 50));
-        });
-    }
 </script>
 {% endblock %}
