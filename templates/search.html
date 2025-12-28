@@ -28,6 +28,23 @@
                 <li><a href="/cuisine/indian"><i class="fas fa-om"></i> Indian</a></li>
                 <li><a href="/cuisine/mexican"><i class="fas fa-pepper-hot"></i> Mexican</a></li>
                 <li><a href="/cuisine/italian"><i class="fas fa-pizza-slice"></i> Italian</a></li>
+                <li><a href="/cuisine/mediterranean"><i class="fas fa-fish"></i> Mediterranean</a></li>
+            </ul>
+        </div>
+
+        <div class="filter-section">
+            <h4>By Cooking Time</h4>
+            <ul class="filter-list">
+                <li><a href="/search-by-time/15min"><i class="fas fa-clock"></i> 15 minutes or less</a></li>
+                <li><a href="/search-by-time/30min"><i class="fas fa-clock"></i> 30 minutes or less</a></li>
+                <li><a href="/search-by-time/1hour"><i class="fas fa-clock"></i> 1 hour or less</a></li>
+            </ul>
+        </div>
+
+        <div class="filter-section">
+            <h4>By Ingredients</h4>
+            <ul class="filter-list">
+                <li><a href="/search-by-ingredients"><i class="fas fa-carrot"></i> What can I make?</a></li>
             </ul>
         </div>
     </aside>
@@ -67,7 +84,14 @@
                                             <i class="fas fa-pepper-hot"></i> Mexican
                                         {% elif recipe.cuisine == 'italian' %}
                                             <i class="fas fa-pizza-slice"></i> Italian
+                                        {% elif recipe.cuisine == 'mediterranean' %}
+                                            <i class="fas fa-fish"></i> Mediterranean
                                         {% endif %}
+                                    </span>
+                                {% endif %}
+                                {% if recipe.cooking_time_minutes %}
+                                    <span class="recipe-badge" style="background: #f0f0f0; color: #333;">
+                                        <i class="fas fa-clock"></i> {{ recipe.cooking_time_minutes }} min
                                     </span>
                                 {% endif %}
                             </div>

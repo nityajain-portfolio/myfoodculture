@@ -5,6 +5,7 @@ from werkzeug.utils import secure_filename
 from functools import wraps
 
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 app.secret_key = 'supersecretkey'  # Change in production
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
@@ -18,7 +19,7 @@ print("\n" + "=" * 60)
 print("🚀 MyFoodCulture App Starting...")
 print("=" * 60)
 print(f"📁 Upload Folder: {app.config['UPLOAD_FOLDER']}")
-print(f"🔐 Secret Key Set: {'Yes' if app.secret_key else 'No'}")
+print(f"🔑 Secret Key Set: {'Yes' if app.secret_key else 'No'}")
 print("=" * 60 + "\n")
 
 
@@ -105,12 +106,91 @@ def search():
         return render_template('search.html', recipes=[], query='')
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM recipes WHERE title LIKE %s OR description LIKE %s", (f'%{query}%', f'%{query}%'))
+    # Search across all text fields in recipes table
+    cursor.execute("""
+        SELECT * FROM recipes 
+        WHERE title LIKE %s 
+        OR description LIKE %s 
+        OR ingredients LIKE %s 
+        OR directions LIKE %s
+        OR category LIKE %s
+        OR cuisine LIKE %s
+    """, (f'%{query}%', f'%{query}%', f'%{query}%', f'%{query}%', f'%{query}%', f'%{query}%'))
     recipes = cursor.fetchall()
     cursor.close()
     conn.close()
     print(f"✅ Found {len(recipes)} recipes\n")
     return render_template('search.html', recipes=recipes, query=query)
+
+
+@app.route('/search-by-ingredients', methods=['GET', 'POST'])
+def search_by_ingredients():
+    """Search recipes by ingredients"""
+    ingredients_query = request.form.get('ingredients') if request.method == 'POST' else request.args.get('ingredients',
+                                                                                                          '')
+    print(f"\n🥗 Searching by ingredients: {ingredients_query}")
+
+    if not ingredients_query:
+        return render_template('ingredient_search.html', recipes=[], ingredients_query='')
+
+    # Split ingredients by comma and clean them
+    ingredient_list = [ing.strip().lower() for ing in ingredients_query.split(',') if ing.strip()]
+
+    if not ingredient_list:
+        return render_template('ingredient_search.html', recipes=[], ingredients_query='')
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Build query to find recipes containing ANY of the ingredients
+    conditions = []
+    params = []
+    for ingredient in ingredient_list:
+        conditions.append("LOWER(ingredients) LIKE %s")
+        params.append(f'%{ingredient}%')
+
+    query = f"SELECT * FROM recipes WHERE {' OR '.join(conditions)} ORDER BY id DESC"
+    cursor.execute(query, params)
+    recipes = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    print(f"✅ Found {len(recipes)} recipes with those ingredients\n")
+    return render_template('ingredient_search.html', recipes=recipes, ingredients_query=ingredients_query)
+
+
+@app.route('/search-by-time/<string:time_range>')
+def search_by_time(time_range):
+    """Search recipes by cooking time"""
+    print(f"\n⏱️ Searching by time: {time_range}")
+
+    time_mapping = {
+        '15min': 15,
+        '30min': 30,
+        '1hour': 60
+    }
+
+    max_minutes = time_mapping.get(time_range)
+    if not max_minutes:
+        flash('Invalid time range')
+        return redirect(url_for('index'))
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM recipes WHERE cooking_time_minutes <= %s ORDER BY cooking_time_minutes ASC",
+                   (max_minutes,))
+    recipes = cursor.fetchall()
+    cursor.close()
+    conn.close()
+
+    time_label = {
+        '15min': '15 minutes',
+        '30min': '30 minutes',
+        '1hour': '1 hour'
+    }
+
+    print(f"✅ Found {len(recipes)} recipes under {time_label[time_range]}\n")
+    return render_template('category.html', recipes=recipes, category=f"Recipes in {time_label[time_range]} or less")
 
 
 @app.route('/admin', methods=['GET', 'POST'])
@@ -128,6 +208,7 @@ def admin():
         description = request.form.get('description')
         ingredients = request.form.get('ingredients')
         directions = request.form.get('directions')
+        cooking_time = request.form.get('cooking_time_minutes')
         file = request.files.get('image')
 
         # Debug output
@@ -135,6 +216,7 @@ def admin():
         print(f"   Title: {title}")
         print(f"   Category: {category}")
         print(f"   Cuisine: {cuisine}")
+        print(f"   Cooking Time: {cooking_time}")
         print(f"   Description: {description[:50] if description else 'None'}...")
         print(f"   Ingredients: {ingredients[:50] if ingredients else 'None'}...")
         print(f"   Directions: {directions[:50] if directions else 'None'}...")
@@ -146,7 +228,8 @@ def admin():
             missing_fields.append('title')
         if not category:
             missing_fields.append('category')
-        if not cuisine:
+        # Cuisine is optional for breakfast and desserts
+        if not cuisine and category not in ['breakfast', 'desserts']:
             missing_fields.append('cuisine')
         if not description:
             missing_fields.append('description')
@@ -162,6 +245,9 @@ def admin():
             return redirect(url_for('admin'))
 
         print("\n✅ All required fields present")
+
+        # Handle cooking time - set to NULL if empty
+        cooking_time_value = int(cooking_time) if cooking_time and cooking_time.strip() else None
 
         # Handle image upload
         image_path = None
@@ -180,8 +266,8 @@ def admin():
             conn = get_db_connection()
             cursor = conn.cursor()
 
-            sql = "INSERT INTO recipes (title, category, cuisine, description, ingredients, directions, image_path) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-            values = (title, category, cuisine, description, ingredients, directions, image_path)
+            sql = "INSERT INTO recipes (title, category, cuisine, description, ingredients, directions, cooking_time_minutes, image_path) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
+            values = (title, category, cuisine, description, ingredients, directions, cooking_time_value, image_path)
 
             cursor.execute(sql, values)
             conn.commit()
@@ -278,16 +364,36 @@ def edit_recipe(id):
         description = request.form.get('description')
         ingredients = request.form.get('ingredients')
         directions = request.form.get('directions')
+        cooking_time = request.form.get('cooking_time_minutes')
         file = request.files.get('image')
 
         print(f"   New title: {title}")
         print(f"   New cuisine: {cuisine}")
+        print(f"   New cooking time: {cooking_time}")
 
         # Validate required fields
-        if not all([title, category, cuisine, description, ingredients, directions]):
-            print("❌ Missing required fields for edit")
-            flash('All fields are required!')
+        missing_fields = []
+        if not title:
+            missing_fields.append('title')
+        if not category:
+            missing_fields.append('category')
+        # Cuisine is optional for breakfast and desserts
+        if not cuisine and category not in ['breakfast', 'desserts']:
+            missing_fields.append('cuisine')
+        if not description:
+            missing_fields.append('description')
+        if not ingredients:
+            missing_fields.append('ingredients')
+        if not directions:
+            missing_fields.append('directions')
+
+        if missing_fields:
+            print(f"❌ Missing required fields: {', '.join(missing_fields)}")
+            flash(f'Missing required fields: {", ".join(missing_fields)}')
             return redirect(url_for('edit_recipe', id=id))
+
+        # Handle cooking time
+        cooking_time_value = int(cooking_time) if cooking_time and cooking_time.strip() else None
 
         try:
             conn = get_db_connection()
@@ -312,8 +418,8 @@ def edit_recipe(id):
 
             # Update recipe
             cursor.execute(
-                "UPDATE recipes SET title=%s, category=%s, cuisine=%s, description=%s, ingredients=%s, directions=%s, image_path=%s WHERE id=%s",
-                (title, category, cuisine, description, ingredients, directions, image_path, id)
+                "UPDATE recipes SET title=%s, category=%s, cuisine=%s, description=%s, ingredients=%s, directions=%s, cooking_time_minutes=%s, image_path=%s WHERE id=%s",
+                (title, category, cuisine, description, ingredients, directions, cooking_time_value, image_path, id)
             )
             conn.commit()
             cursor.close()
@@ -329,7 +435,7 @@ def edit_recipe(id):
             return redirect(url_for('edit_recipe', id=id))
 
     # GET request - load recipe for editing
-    print(f"\n📝 Loading recipe {id} for editing...")
+    print(f"\n🔍 Loading recipe {id} for editing...")
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM recipes WHERE id = %s", (id,))

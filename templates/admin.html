@@ -13,7 +13,7 @@
 
             <label>
                 <strong>Category:</strong>
-                <select name="category" required>
+                <select name="category" id="categorySelect" required>
                     <option value="breakfast" {% if edit_recipe and edit_recipe.category == 'breakfast' %}selected{% endif %}>Breakfast</option>
                     <option value="snacks" {% if edit_recipe and edit_recipe.category == 'snacks' %}selected{% endif %}>Snacks</option>
                     <option value="lunch_dinner" {% if edit_recipe and edit_recipe.category == 'lunch_dinner' %}selected{% endif %}>Lunch/Dinner</option>
@@ -22,14 +22,20 @@
             </label>
 
             <label>
-                <strong>Cuisine:</strong>
-                <select name="cuisine" required>
+                <strong>Cuisine <span id="cuisineOptional" style="color: #999; font-size: 0.9em;">(optional for Breakfast & Desserts)</span>:</strong>
+                <select name="cuisine" id="cuisineSelect">
                     <option value="">Select Cuisine</option>
                     <option value="asian" {% if edit_recipe and edit_recipe.cuisine == 'asian' %}selected{% endif %}>Asian</option>
                     <option value="indian" {% if edit_recipe and edit_recipe.cuisine == 'indian' %}selected{% endif %}>Indian</option>
                     <option value="mexican" {% if edit_recipe and edit_recipe.cuisine == 'mexican' %}selected{% endif %}>Mexican</option>
                     <option value="italian" {% if edit_recipe and edit_recipe.cuisine == 'italian' %}selected{% endif %}>Italian</option>
+                    <option value="mediterranean" {% if edit_recipe and edit_recipe.cuisine == 'mediterranean' %}selected{% endif %}>Mediterranean</option>
                 </select>
+            </label>
+
+            <label>
+                <strong>Cooking Time (minutes - optional):</strong>
+                <input type="number" name="cooking_time_minutes" value="{{ edit_recipe.cooking_time_minutes if edit_recipe and edit_recipe.cooking_time_minutes else '' }}" min="1" placeholder="e.g. 30">
             </label>
         </div>
 
@@ -104,7 +110,29 @@
     console.log('Admin page loaded');
 
     const form = document.querySelector('form.admin-form');
-    console.log('Form found:', form ? 'YES' : 'NO');
+    const categorySelect = document.getElementById('categorySelect');
+    const cuisineSelect = document.getElementById('cuisineSelect');
+    const cuisineOptional = document.getElementById('cuisineOptional');
+
+    // Function to update cuisine requirement based on category
+    function updateCuisineRequirement() {
+        const category = categorySelect.value;
+        const isOptional = category === 'breakfast' || category === 'desserts';
+        
+        if (isOptional) {
+            cuisineSelect.removeAttribute('required');
+            cuisineOptional.style.display = 'inline';
+        } else {
+            cuisineSelect.setAttribute('required', 'required');
+            cuisineOptional.style.display = 'none';
+        }
+    }
+
+    // Set initial state
+    updateCuisineRequirement();
+
+    // Update when category changes
+    categorySelect.addEventListener('change', updateCuisineRequirement);
 
     if (form) {
         form.addEventListener('submit', function(e) {
@@ -112,6 +140,7 @@
             console.log('Title:', document.querySelector('input[name="title"]').value);
             console.log('Category:', document.querySelector('select[name="category"]').value);
             console.log('Cuisine:', document.querySelector('select[name="cuisine"]').value);
+            console.log('Cooking Time:', document.querySelector('input[name="cooking_time_minutes"]').value);
             console.log('Description:', document.querySelector('textarea[name="description"]').value.substring(0, 50));
         });
     }
