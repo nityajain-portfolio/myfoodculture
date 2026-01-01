@@ -56,6 +56,27 @@ def get_recipe_images(recipe_id, conn=None):
     return images
 
 
+# Helper function to enrich recipes with images
+def enrich_recipes_with_images(recipes, conn=None):
+    """Add images and image_path to recipes for template compatibility"""
+    close_conn = False
+    if conn is None:
+        conn = get_db_connection()
+        close_conn = True
+
+    for recipe in recipes:
+        images = get_recipe_images(recipe['id'], conn)
+        recipe['images'] = images
+        recipe['primary_image'] = images[0] if images else None
+        # Add image_path for backward compatibility with templates
+        recipe['image_path'] = images[0]['image_path'] if images else None
+
+    if close_conn:
+        conn.close()
+
+    return recipes
+
+
 # Helper function to add recipe images
 def add_recipe_images(recipe_id, files):
     """Add multiple images for a recipe"""
@@ -138,13 +159,10 @@ def index():
         "SELECT * FROM recipes WHERE cooking_time_minutes <= 15 AND cooking_time_minutes IS NOT NULL ORDER BY cooking_time_minutes ASC")
     quick_recipes = cursor.fetchall()
 
-    # Add images to recipes
+    # Add images to all recipe lists using the helper function
     for recipe_list in [latest_recipes, breakfast_recipes, snacks_recipes, lunch_dinner_recipes, desserts_recipes,
                         quick_recipes]:
-        for recipe in recipe_list:
-            images = get_recipe_images(recipe['id'], conn)
-            recipe['images'] = images
-            recipe['primary_image'] = images[0] if images else None
+        enrich_recipes_with_images(recipe_list, conn)
 
     cursor.close()
     conn.close()
@@ -173,11 +191,8 @@ def category(cat):
     cursor.execute("SELECT * FROM recipes WHERE category = %s", (cat,))
     recipes = cursor.fetchall()
 
-    # Add images
-    for recipe in recipes:
-        images = get_recipe_images(recipe['id'], conn)
-        recipe['images'] = images
-        recipe['primary_image'] = images[0] if images else None
+    # Add images using helper function
+    enrich_recipes_with_images(recipes, conn)
 
     cursor.close()
     conn.close()
@@ -193,11 +208,8 @@ def cuisine(cuisine_type):
     cursor.execute("SELECT * FROM recipes WHERE cuisine = %s", (cuisine_type,))
     recipes = cursor.fetchall()
 
-    # Add images
-    for recipe in recipes:
-        images = get_recipe_images(recipe['id'], conn)
-        recipe['images'] = images
-        recipe['primary_image'] = images[0] if images else None
+    # Add images using helper function
+    enrich_recipes_with_images(recipes, conn)
 
     cursor.close()
     conn.close()
@@ -225,11 +237,8 @@ def search():
     """, (f'%{query}%', f'%{query}%', f'%{query}%', f'%{query}%', f'%{query}%', f'%{query}%'))
     recipes = cursor.fetchall()
 
-    # Add images
-    for recipe in recipes:
-        images = get_recipe_images(recipe['id'], conn)
-        recipe['images'] = images
-        recipe['primary_image'] = images[0] if images else None
+    # Add images using helper function
+    enrich_recipes_with_images(recipes, conn)
 
     cursor.close()
     conn.close()
@@ -237,99 +246,85 @@ def search():
     return render_template('search.html', recipes=recipes, query=query)
 
 
-@app.route('/search-by-ingredients', methods=['GET', 'POST'])
-def search_by_ingredients():
-    """Search recipes by ingredients"""
-    ingredients_query = request.form.get('ingredients') if request.method == 'POST' else request.args.get('ingredients',
-                                                                                                          '')
-    print(f"\n🥗 Searching by ingredients: {ingredients_query}")
-
-    if not ingredients_query:
-        return render_template('ingredient_search.html', recipes=[], ingredients_query='')
-
-    # Split ingredients by comma and clean them
-    ingredient_list = [ing.strip().lower() for ing in ingredients_query.split(',') if ing.strip()]
-
-    if not ingredient_list:
-        return render_template('ingredient_search.html', recipes=[], ingredients_query='')
-
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-
-    # Build query to find recipes containing ANY of the ingredients
-    conditions = []
-    params = []
-    for ingredient in ingredient_list:
-        conditions.append("LOWER(ingredients) LIKE %s")
-        params.append(f'%{ingredient}%')
-
-    query = f"SELECT * FROM recipes WHERE {' OR '.join(conditions)} ORDER BY id DESC"
-    cursor.execute(query, params)
-    recipes = cursor.fetchall()
-
-    # Add images
-    for recipe in recipes:
-        images = get_recipe_images(recipe['id'], conn)
-        recipe['images'] = images
-        recipe['primary_image'] = images[0] if images else None
-
-    cursor.close()
-    conn.close()
-
-    print(f"✅ Found {len(recipes)} recipes with those ingredients\n")
-    return render_template('ingredient_search.html', recipes=recipes, ingredients_query=ingredients_query)
-
-
-@app.route('/search-by-time/<string:time_range>')
+@app.route('/search-by-time/<time_range>')
 def search_by_time(time_range):
-    """Search recipes by cooking time"""
-    print(f"\n⏱️ Searching by time: {time_range}")
+    print(f"\n⏰ Searching recipes by time: {time_range}")
 
-    time_mapping = {
+    # Map time_range to minutes
+    time_map = {
         '15min': 15,
         '30min': 30,
         '1hour': 60
     }
 
-    max_minutes = time_mapping.get(time_range)
-    if not max_minutes:
-        flash('Invalid time range')
-        return redirect(url_for('index'))
+    max_time = time_map.get(time_range, 30)
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM recipes WHERE cooking_time_minutes <= %s ORDER BY cooking_time_minutes ASC",
-                   (max_minutes,))
+    cursor.execute(
+        "SELECT * FROM recipes WHERE cooking_time_minutes <= %s AND cooking_time_minutes IS NOT NULL ORDER BY cooking_time_minutes ASC",
+        (max_time,)
+    )
     recipes = cursor.fetchall()
 
-    # Add images
-    for recipe in recipes:
-        images = get_recipe_images(recipe['id'], conn)
-        recipe['images'] = images
-        recipe['primary_image'] = images[0] if images else None
+    # Add images using helper function
+    enrich_recipes_with_images(recipes, conn)
 
     cursor.close()
     conn.close()
 
-    time_label = {
-        '15min': '15 minutes',
-        '30min': '30 minutes',
-        '1hour': '1 hour'
-    }
-
-    print(f"✅ Found {len(recipes)} recipes under {time_label[time_range]}\n")
-    return render_template('category.html', recipes=recipes, category=f"Recipes in {time_label[time_range]} or less")
+    print(f"✅ Found {len(recipes)} recipes under {max_time} minutes\n")
+    return render_template('search_time.html', recipes=recipes, time_range=time_range, max_time=max_time)
 
 
-@app.route('/admin', methods=['GET', 'POST'])
+@app.route('/search-by-ingredients', methods=['GET', 'POST'])
+def search_by_ingredients():
+    if request.method == 'POST':
+        ingredients_input = request.form.get('ingredients', '')
+        print(f"\n🥕 Searching by ingredients: {ingredients_input}")
+
+        # Split ingredients by comma and clean them
+        ingredients = [ing.strip().lower() for ing in ingredients_input.split(',') if ing.strip()]
+
+        if not ingredients:
+            return render_template('search_ingredients.html', recipes=[], query='')
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Build dynamic query - recipe must contain ALL ingredients
+        query = "SELECT * FROM recipes WHERE "
+        conditions = []
+        params = []
+
+        for ingredient in ingredients:
+            conditions.append("LOWER(ingredients) LIKE %s")
+            params.append(f'%{ingredient}%')
+
+        query += " AND ".join(conditions)
+
+        cursor.execute(query, params)
+        recipes = cursor.fetchall()
+
+        # Add images using helper function
+        enrich_recipes_with_images(recipes, conn)
+
+        cursor.close()
+        conn.close()
+
+        print(f"✅ Found {len(recipes)} recipes with ingredients: {', '.join(ingredients)}\n")
+        return render_template('search_ingredients.html', recipes=recipes, query=ingredients_input)
+
+    # GET request
+    return render_template('search_ingredients.html', recipes=[], query='')
+
+
+@app.route('/admin/add', methods=['GET', 'POST'])
 @auth_required
-def admin():
-    if request.method == 'POST' and 'query' not in request.form:
-        print("\n" + "=" * 60)
-        print("📝 ATTEMPTING TO ADD NEW RECIPE")
-        print("=" * 60)
+def add_recipe():
+    if request.method == 'POST':
+        print("\n➕ Adding new recipe...")
 
-        # Get form data
         title = request.form.get('title')
         category = request.form.get('category')
         cuisine = request.form.get('cuisine')
@@ -338,16 +333,7 @@ def admin():
         directions = request.form.get('directions')
         cooking_time = request.form.get('cooking_time_minutes')
         added_by = request.form.get('added_by', 'nitya').strip() or 'nitya'  # Default to 'nitya'
-        files = request.files.getlist('images')  # Multiple files
-
-        # Debug output
-        print(f"\n📋 Form Data Received:")
-        print(f"   Title: {title}")
-        print(f"   Category: {category}")
-        print(f"   Cuisine: {cuisine}")
-        print(f"   Cooking Time: {cooking_time}")
-        print(f"   Added By: {added_by}")
-        print(f"   Number of images: {len(files)}")
+        files = request.files.getlist('images')
 
         # Validate required fields
         missing_fields = []
@@ -355,7 +341,6 @@ def admin():
             missing_fields.append('title')
         if not category:
             missing_fields.append('category')
-        # Cuisine is optional for breakfast and desserts
         if not cuisine and category not in ['breakfast', 'desserts']:
             missing_fields.append('cuisine')
         if not description:
@@ -366,56 +351,46 @@ def admin():
             missing_fields.append('directions')
 
         if missing_fields:
-            error_msg = f'❌ Missing required fields: {", ".join(missing_fields)}'
-            print(f"\n{error_msg}\n")
-            flash(error_msg)
-            return redirect(url_for('admin'))
+            flash(f'Missing required fields: {", ".join(missing_fields)}')
+            return redirect(url_for('add_recipe'))
 
-        print("\n✅ All required fields present")
-
-        # Handle cooking time
         cooking_time_value = int(cooking_time) if cooking_time and cooking_time.strip() else None
 
-        # Insert recipe into database
         try:
-            print("\n💾 Attempting to save to database...")
             conn = get_db_connection()
             cursor = conn.cursor()
 
-            sql = "INSERT INTO recipes (title, category, cuisine, description, ingredients, directions, cooking_time_minutes, added_by) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-            values = (title, category, cuisine, description, ingredients, directions, cooking_time_value, added_by)
-
-            cursor.execute(sql, values)
-            conn.commit()
+            # Insert recipe
+            cursor.execute("""
+                INSERT INTO recipes (title, category, cuisine, description, ingredients, directions, cooking_time_minutes, added_by)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, (title, category, cuisine, description, ingredients, directions, cooking_time_value, added_by))
 
             recipe_id = cursor.lastrowid
-            print(f"✅ SUCCESS! Recipe saved with ID: {recipe_id}")
-
+            conn.commit()
             cursor.close()
             conn.close()
 
-            # Handle multiple images
+            # Handle image uploads
             if files and any(f.filename for f in files):
                 add_recipe_images(recipe_id, files)
 
+            print(f"✅ Recipe '{title}' added successfully with ID {recipe_id}\n")
             flash('Recipe added successfully!')
-            print("=" * 60 + "\n")
-            return redirect(url_for('admin'))
-
-        except mysql.connector.Error as db_err:
-            error_msg = f"❌ DATABASE ERROR: {str(db_err)}"
-            print(f"\n{error_msg}")
-            flash(f'Database error: {str(db_err)}')
             return redirect(url_for('admin'))
 
         except Exception as e:
-            error_msg = f"❌ UNEXPECTED ERROR: {str(e)}"
-            print(f"\n{error_msg}")
-            flash(f'Error: {str(e)}')
-            return redirect(url_for('admin'))
+            print(f"❌ Error adding recipe: {str(e)}\n")
+            flash(f'Error adding recipe: {str(e)}')
+            return redirect(url_for('add_recipe'))
 
-    # GET request - show all recipes
-    print("\n📋 Loading admin page...")
+    return render_template('add_recipe.html')
+
+
+@app.route('/admin')
+@auth_required
+def admin():
+    print("\n🔐 Loading admin panel...")
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
@@ -476,6 +451,8 @@ def recipe(id):
         # Get all images for this recipe
         recipe['images'] = get_recipe_images(id, conn)
         recipe['primary_image'] = recipe['images'][0] if recipe['images'] else None
+        # Add image_path for backward compatibility
+        recipe['image_path'] = recipe['images'][0]['image_path'] if recipe['images'] else None
 
     cursor.close()
     conn.close()
