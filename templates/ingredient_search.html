@@ -24,6 +24,7 @@
         <div class="filter-section">
             <h4>Cuisines</h4>
             <ul class="filter-list">
+                <li><a href="/cuisine/american"><i class="fas fa-flag-usa"></i> American</a></li>
                 <li><a href="/cuisine/asian"><i class="fas fa-globe-asia"></i> Asian</a></li>
                 <li><a href="/cuisine/indian"><i class="fas fa-om"></i> Indian</a></li>
                 <li><a href="/cuisine/mexican"><i class="fas fa-pepper-hot"></i> Mexican</a></li>
@@ -49,10 +50,10 @@
                 <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
                     <i class="fas fa-carrot"></i> Enter your ingredients:
                 </label>
-                <input 
-                    type="text" 
-                    name="ingredients" 
-                    placeholder="e.g. tomatoes, rice, chickpeas" 
+                <input
+                    type="text"
+                    name="ingredients"
+                    placeholder="e.g. tomatoes, rice, chickpeas"
                     value="{{ ingredients_query }}"
                     style="width: 100%; padding: 0.75rem; border: 2px solid #87A878; border-radius: 4px; font-size: 1rem;"
                     required
@@ -96,7 +97,9 @@
                                     </span>
                                     {% if recipe.cuisine %}
                                         <span class="recipe-badge badge-cuisine">
-                                            {% if recipe.cuisine == 'asian' %}
+                                            {% if recipe.cuisine == 'american' %}
+                                                <i class="fas fa-flag-usa"></i> American
+                                            {% elif recipe.cuisine == 'asian' %}
                                                 <i class="fas fa-globe-asia"></i> Asian
                                             {% elif recipe.cuisine == 'indian' %}
                                                 <i class="fas fa-om"></i> Indian

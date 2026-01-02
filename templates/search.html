@@ -24,6 +24,7 @@
         <div class="filter-section">
             <h4>Cuisines</h4>
             <ul class="filter-list">
+                <li><a href="/cuisine/american"><i class="fas fa-flag-usa"></i> American</a></li>
                 <li><a href="/cuisine/asian"><i class="fas fa-globe-asia"></i> Asian</a></li>
                 <li><a href="/cuisine/indian"><i class="fas fa-om"></i> Indian</a></li>
                 <li><a href="/cuisine/mexican"><i class="fas fa-pepper-hot"></i> Mexican</a></li>
@@ -76,7 +77,9 @@
                                 </span>
                                 {% if recipe.cuisine %}
                                     <span class="recipe-badge badge-cuisine">
-                                        {% if recipe.cuisine == 'asian' %}
+                                        {% if recipe.cuisine == 'american' %}
+                                            <i class="fas fa-flag-usa"></i> American
+                                        {% elif recipe.cuisine == 'asian' %}
                                             <i class="fas fa-globe-asia"></i> Asian
                                         {% elif recipe.cuisine == 'indian' %}
                                             <i class="fas fa-om"></i> Indian

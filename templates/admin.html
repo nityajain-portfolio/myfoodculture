@@ -25,6 +25,7 @@
                 <strong>Cuisine <span id="cuisineOptional" style="color: #999; font-size: 0.9em;">(optional for Breakfast & Desserts)</span>:</strong>
                 <select name="cuisine" id="cuisineSelect">
                     <option value="">Select Cuisine</option>
+                    <option value="american" {% if edit_recipe and edit_recipe.cuisine == 'american' %}selected{% endif %}>American</option>
                     <option value="asian" {% if edit_recipe and edit_recipe.cuisine == 'asian' %}selected{% endif %}>Asian</option>
                     <option value="indian" {% if edit_recipe and edit_recipe.cuisine == 'indian' %}selected{% endif %}>Indian</option>
                     <option value="mexican" {% if edit_recipe and edit_recipe.cuisine == 'mexican' %}selected{% endif %}>Mexican</option>
