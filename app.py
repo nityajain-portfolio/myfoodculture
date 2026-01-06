@@ -205,7 +205,8 @@ def cuisine(cuisine_type):
     print(f"\n🌍 Loading cuisine: {cuisine_type}")
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM recipes WHERE cuisine = %s", (cuisine_type,))
+    # FIXED: Use LOWER() for case-insensitive matching
+    cursor.execute("SELECT * FROM recipes WHERE LOWER(cuisine) = LOWER(%s)", (cuisine_type,))
     recipes = cursor.fetchall()
 
     # Add images using helper function
@@ -243,24 +244,22 @@ def search():
 
     cursor.close()
     conn.close()
-    print(f"✅ Found {len(recipes)} recipes for '{query}'\n")
+    print(f"✅ Found {len(recipes)} recipes\n")
     return render_template('search.html', recipes=recipes, query=query)
 
 
-@app.route('/admin', methods=['GET', 'POST'])
-@auth_required
-def admin():
+@app.route('/add', methods=['GET', 'POST'])
+def add_recipe():
     if request.method == 'POST':
-        # POST logic - Adding a new recipe
         print("\n➕ Adding new recipe...")
 
         title = request.form.get('title')
+        category = request.form.get('category')
+        cuisine = request.form.get('cuisine')
         description = request.form.get('description')
         ingredients = request.form.get('ingredients')
         directions = request.form.get('directions')
-        category = request.form.get('category')
-        cuisine = request.form.get('cuisine') or None
-        cooking_time_minutes = request.form.get('cooking_time_minutes')
+        cooking_time = request.form.get('cooking_time_minutes')
         added_by = request.form.get('added_by', 'nitya').strip() or 'nitya'
         files = request.files.getlist('images')
 
@@ -281,21 +280,17 @@ def admin():
 
         if missing_fields:
             flash(f'Missing required fields: {", ".join(missing_fields)}')
-            return redirect(url_for('admin'))
+            return redirect(url_for('add_recipe'))
 
-        cooking_time_value = int(
-            cooking_time_minutes) if cooking_time_minutes and cooking_time_minutes.strip() else None
+        cooking_time_value = int(cooking_time) if cooking_time and cooking_time.strip() else None
 
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
-
-            # Insert new recipe
             cursor.execute("""
                 INSERT INTO recipes (title, category, cuisine, description, ingredients, directions, cooking_time_minutes, added_by) 
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """, (title, category, cuisine, description, ingredients, directions, cooking_time_value, added_by))
-
             recipe_id = cursor.lastrowid
             conn.commit()
             cursor.close()
@@ -305,24 +300,29 @@ def admin():
             if files and any(f.filename for f in files):
                 add_recipe_images(recipe_id, files)
 
-            print(f"✅ Recipe added successfully with ID {recipe_id}\n")
+            print(f"✅ Recipe added successfully with ID: {recipe_id}\n")
             flash('Recipe added successfully!')
-            return redirect(url_for('admin'))
+            return redirect(url_for('index'))
 
         except Exception as e:
             print(f"❌ Error adding recipe: {str(e)}\n")
             flash(f'Error adding recipe: {str(e)}')
-            return redirect(url_for('admin'))
+            return redirect(url_for('add_recipe'))
 
-    # GET logic - Display admin page
-    print("\n📋 Loading admin panel...")
+    return render_template('add.html')
+
+
+@app.route('/admin')
+@auth_required
+def admin():
+    print("\n🔐 Loading admin panel...")
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT * FROM recipes ORDER BY id DESC")
         recipes = cursor.fetchall()
 
-        # Add images to each recipe
+        # Add images and image count to all recipes
         for recipe in recipes:
             images = get_recipe_images(recipe['id'], conn)
             recipe['images'] = images
