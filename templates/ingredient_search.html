@@ -77,7 +77,7 @@
                     {% for recipe in recipes %}
                         <div class="recipe-card">
                             {% if recipe.image_path %}
-                                <img src="{{ url_for(\'uploaded_file\', filename=recipe.image_path.split(\'/\')[-1]) }}" alt="{{ recipe.title }}" onerror="this.onerror=null; this.src=\'{{ url_for(\'static\', filename=\'placeholder-coming-soon.png\') }}\'">
+                                <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
                             {% else %}
                                 <img src="{{ url_for('static', filename='placeholder-coming-soon.png') }}" alt="{{ recipe.title }}">
                             {% endif %}

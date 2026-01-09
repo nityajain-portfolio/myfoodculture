@@ -220,32 +220,100 @@ def cuisine(cuisine_type):
 
 @app.route('/search', methods=['GET', 'POST'])
 def search():
-    query = request.form.get('q') if request.method == 'POST' else request.args.get('q', '')
-    print(f"\n🔍 Searching for: {query}")
+    """Search recipes - works on both Windows and Ubuntu"""
+    print("\n🔍 Search request received")
+
+    # Get query from either POST or GET, handle both methods
+    query = ''
+    try:
+        if request.method == 'POST':
+            query = request.form.get('q', '').strip()
+        else:
+            query = request.args.get('q', '').strip()
+    except Exception as e:
+        print(f"⚠️  Error getting query parameter: {e}")
+        query = ''
+
+    print(f"📝 Search query: '{query}'")
+
+    # Return empty results if no query
     if not query:
+        print("⚠️  Empty query, returning empty results")
         return render_template('search.html', recipes=[], query='')
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    # Search across all text fields in recipes table
-    cursor.execute("""
-        SELECT * FROM recipes 
-        WHERE title LIKE %s 
-        OR description LIKE %s 
-        OR ingredients LIKE %s 
-        OR directions LIKE %s
-        OR category LIKE %s
-        OR cuisine LIKE %s
-        ORDER BY id DESC
-    """, (f'%{query}%', f'%{query}%', f'%{query}%', f'%{query}%', f'%{query}%', f'%{query}%'))
-    recipes = cursor.fetchall()
 
-    # Add images
-    enrich_recipes_with_images(recipes, conn)
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
 
-    cursor.close()
-    conn.close()
-    print(f"✅ Found {len(recipes)} recipes\n")
-    return render_template('search.html', recipes=recipes, query=query)
+        # Improved search with relevance scoring
+        # Searches ALL fields and ranks results by relevance
+        search_pattern = f'%{query}%'
+
+        cursor.execute("""
+            SELECT r.*, 
+                   (SELECT ri.image_path 
+                    FROM recipe_images ri 
+                    WHERE ri.recipe_id = r.id 
+                    ORDER BY ri.is_primary DESC, ri.display_order ASC 
+                    LIMIT 1) as image_path,
+                   -- Relevance score: title matches rank highest
+                   (CASE 
+                       WHEN LOWER(r.title) LIKE LOWER(%s) THEN 100
+                       WHEN LOWER(r.title) LIKE LOWER(%s) THEN 50
+                       ELSE 0
+                   END +
+                   CASE WHEN LOWER(r.description) LIKE LOWER(%s) THEN 20 ELSE 0 END +
+                   CASE WHEN LOWER(r.ingredients) LIKE LOWER(%s) THEN 15 ELSE 0 END +
+                   CASE WHEN LOWER(r.directions) LIKE LOWER(%s) THEN 10 ELSE 0 END +
+                   CASE WHEN LOWER(r.category) LIKE LOWER(%s) THEN 5 ELSE 0 END +
+                   CASE WHEN LOWER(r.cuisine) LIKE LOWER(%s) THEN 5 ELSE 0 END +
+                   CASE WHEN LOWER(r.added_by) LIKE LOWER(%s) THEN 2 ELSE 0 END
+                   ) as relevance_score
+            FROM recipes r
+            WHERE LOWER(r.title) LIKE LOWER(%s)
+               OR LOWER(r.description) LIKE LOWER(%s)
+               OR LOWER(r.ingredients) LIKE LOWER(%s)
+               OR LOWER(r.directions) LIKE LOWER(%s)
+               OR LOWER(r.category) LIKE LOWER(%s)
+               OR LOWER(r.cuisine) LIKE LOWER(%s)
+               OR LOWER(r.added_by) LIKE LOWER(%s)
+               OR CAST(r.cooking_time_minutes AS CHAR) LIKE %s
+            ORDER BY relevance_score DESC, r.id DESC
+        """, (
+            # For relevance scoring (exact match vs contains)
+            query,  # Exact title match
+            search_pattern,  # Title contains
+            search_pattern,  # Description
+            search_pattern,  # Ingredients
+            search_pattern,  # Directions
+            search_pattern,  # Category
+            search_pattern,  # Cuisine
+            search_pattern,  # Added by
+            # For WHERE clause
+            search_pattern,  # Title
+            search_pattern,  # Description
+            search_pattern,  # Ingredients
+            search_pattern,  # Directions
+            search_pattern,  # Category
+            search_pattern,  # Cuisine
+            search_pattern,  # Added by
+            search_pattern  # Cooking time
+        ))
+
+        recipes = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
+        print(f"✅ Found {len(recipes)} recipes\n")
+        return render_template('search.html', recipes=recipes, query=query)
+
+    except Exception as e:
+        print(f"❌ Search error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        flash(f'Search error: {str(e)}')
+        return render_template('search.html', recipes=[], query=query)
 
 
 @app.route('/add', methods=['GET', 'POST'])
@@ -552,6 +620,122 @@ def delete_recipe(id):
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+
+@app.route('/search-by-ingredients', methods=['GET', 'POST'])
+def search_by_ingredients():
+    """Search recipes by ingredients - works on both Windows and Ubuntu"""
+    print("\n🔍 Search by ingredients request")
+
+    ingredients_query = ""
+    recipes = []
+
+    try:
+        if request.method == 'POST':
+            ingredients_query = request.form.get('ingredients', '').strip()
+            print(f"📝 Searching for ingredients: {ingredients_query}")
+
+            if ingredients_query:
+                try:
+                    conn = get_db_connection()
+                    cursor = conn.cursor(dictionary=True)
+
+                    # Split ingredients by comma and search for recipes containing any of them
+                    ingredient_list = [ing.strip().lower() for ing in ingredients_query.split(',') if ing.strip()]
+
+                    if ingredient_list:
+                        # Build query with OR conditions for each ingredient
+                        conditions = " OR ".join(["LOWER(ingredients) LIKE %s" for _ in ingredient_list])
+                        query = f"""
+                            SELECT r.*, 
+                                   (SELECT ri.image_path 
+                                    FROM recipe_images ri 
+                                    WHERE ri.recipe_id = r.id 
+                                    ORDER BY ri.is_primary DESC, ri.display_order ASC 
+                                    LIMIT 1) as image_path
+                            FROM recipes r
+                            WHERE {conditions}
+                            ORDER BY r.id DESC
+                        """
+
+                        # Create search params with wildcards
+                        search_params = [f"%{ing}%" for ing in ingredient_list]
+
+                        cursor.execute(query, search_params)
+                        recipes = cursor.fetchall()
+
+                        cursor.close()
+                        conn.close()
+
+                        print(f"✅ Found {len(recipes)} recipes")
+
+                except Exception as e:
+                    print(f"❌ Error searching by ingredients: {str(e)}")
+                    import traceback
+                    traceback.print_exc()
+                    flash(f'Error searching recipes: {str(e)}')
+
+    except Exception as e:
+        print(f"❌ Request handling error: {str(e)}")
+        flash(f'Error processing request: {str(e)}')
+
+    return render_template('ingredient_search.html',
+                           recipes=recipes,
+                           ingredients_query=ingredients_query)
+
+
+@app.route('/search-by-time/<string:time_filter>')
+def search_by_time(time_filter):
+    """Search recipes by cooking time - works on both Windows and Ubuntu"""
+    print(f"\n⏱️  Search by time: {time_filter}")
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Define time limits
+        time_limits = {
+            '15min': 15,
+            '30min': 30,
+            '1hour': 60
+        }
+
+        max_time = time_limits.get(time_filter, 60)
+
+        query = """
+            SELECT r.*, 
+                   (SELECT ri.image_path 
+                    FROM recipe_images ri 
+                    WHERE ri.recipe_id = r.id 
+                    ORDER BY ri.is_primary DESC, ri.display_order ASC 
+                    LIMIT 1) as image_path
+            FROM recipes r
+            WHERE r.cooking_time_minutes IS NOT NULL 
+              AND r.cooking_time_minutes <= %s
+            ORDER BY r.cooking_time_minutes ASC
+        """
+
+        cursor.execute(query, (max_time,))
+        recipes = cursor.fetchall()
+
+        cursor.close()
+        conn.close()
+
+        print(f"✅ Found {len(recipes)} recipes under {max_time} minutes")
+
+        # Create a friendly title
+        time_title = f"{max_time} minutes or less"
+
+        return render_template('category.html',
+                               recipes=recipes,
+                               category=f"Recipes - {time_title}")
+
+    except Exception as e:
+        print(f"❌ Error searching by time: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        flash(f'Error searching recipes: {str(e)}')
+        return redirect(url_for('index'))
 
 
 if __name__ == '__main__':
