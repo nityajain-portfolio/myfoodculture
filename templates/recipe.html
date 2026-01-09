@@ -1,183 +1,123 @@
 {% extends 'base.html' %}
-{% block title %}{{ recipe.title }} - MyFoodCulture{% endblock %}
+{% block title %}Search Results - MyFoodCulture{% endblock %}
 {% block content %}
-<div class="recipe-detail">
-    <h1>{{ recipe.title }}</h1>
+<div class="page-header">
+    <h2>Search: "{{ query }}"</h2>
+    <p>{{ recipes|length }} result(s) found</p>
+</div>
 
-    <div class="recipe-meta" style="margin-bottom: 1.5rem;">
-        <span class="recipe-badge badge-category">
-            {% if recipe.category == 'breakfast' %}
-                <i class="fas fa-coffee"></i> Breakfast
-            {% elif recipe.category == 'snacks' %}
-                <i class="fas fa-utensils"></i> Snacks
-            {% elif recipe.category == 'lunch_dinner' %}
-                <i class="fas fa-leaf"></i> Lunch/Dinner
-            {% elif recipe.category == 'desserts' %}
-                <i class="fas fa-ice-cream"></i> Desserts
-            {% endif %}
-        </span>
-        {% if recipe.cuisine %}
-            <span class="recipe-badge badge-cuisine">
-                {% if recipe.cuisine == 'american' %}
-                    <i class="fas fa-flag-usa"></i> American
-                {% elif recipe.cuisine == 'asian' %}
-                    <i class="fas fa-globe-asia"></i> Asian
-                {% elif recipe.cuisine == 'indian' %}
-                    <i class="fas fa-om"></i> Indian
-                {% elif recipe.cuisine == 'mexican' %}
-                    <i class="fas fa-pepper-hot"></i> Mexican
-                {% elif recipe.cuisine == 'italian' %}
-                    <i class="fas fa-pizza-slice"></i> Italian
-                {% elif recipe.cuisine == 'mediterranean' %}
-                    <i class="fas fa-fish"></i> Mediterranean
-                {% endif %}
-            </span>
-        {% endif %}
-        {% if recipe.cooking_time_minutes %}
-            <span class="recipe-badge" style="background: #f0f0f0; color: #333; font-size: 1rem;">
-                <i class="fas fa-clock"></i> {{ recipe.cooking_time_minutes }} minutes
-            </span>
-        {% endif %}
-        {% if recipe.added_by %}
-            <span class="recipe-badge" style="background: #e8f5e9; color: #2e7d32; font-size: 1rem;">
-                <i class="fas fa-user-edit"></i> By {{ recipe.added_by }}
-            </span>
-        {% endif %}
-    </div>
+<div class="page-layout">
+    <!-- Left Sidebar Filter -->
+    <aside class="left-sidebar">
+        <h3>Filter Recipes</h3>
 
-    <!-- Image Gallery -->
-    {% if recipe.images %}
-    <div class="image-gallery">
-        <div class="main-image">
-            <img id="mainImage" src="{{ url_for('uploaded_file', filename=recipe.images[0].image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
-        </div>
-
-        {% if recipe.images|length > 1 %}
-        <div class="thumbnail-gallery">
-            {% for image in recipe.images %}
-                <img
-                    class="thumbnail {{ 'active' if loop.first else '' }}"
-                    src="{{ url_for('uploaded_file', filename=image.image_path.split('/')[-1]) }}"
-                    alt="{{ recipe.title }} - Image {{ loop.index }}"
-                    onclick="changeMainImage(this)"
-                >
-            {% endfor %}
-        </div>
-        {% endif %}
-    </div>
-    {% endif %}
-
-    <div class="recipe-description" style="margin-top: 2rem;">
-        <h3><i class="fas fa-info-circle"></i> Description</h3>
-        <p>{{ recipe.description | safe if recipe.description else 'No description available.' }}</p>
-    </div>
-
-    <div class="recipe-content-grid">
-        <div class="ingredients-section">
-            <h3><i class="fas fa-shopping-basket"></i> Ingredients</h3>
-            <ul>
-                {% if recipe.ingredients %}
-                    {% set ingredients_list = recipe.ingredients.split('\n') %}
-                    {% for item in ingredients_list if item.strip() %}
-                        <li>{{ item.strip() }}</li>
-                    {% endfor %}
-                {% else %}
-                    <li>No ingredients listed.</li>
-                {% endif %}
+        <div class="filter-section">
+            <h4>Categories</h4>
+            <ul class="filter-list">
+                <li><a href="/category/breakfast"><i class="fas fa-coffee"></i> Breakfast</a></li>
+                <li><a href="/category/snacks"><i class="fas fa-utensils"></i> Snacks</a></li>
+                <li><a href="/category/lunch_dinner"><i class="fas fa-leaf"></i> Lunch/Dinner</a></li>
+                <li><a href="/category/desserts"><i class="fas fa-ice-cream"></i> Desserts</a></li>
             </ul>
         </div>
 
-        <div class="directions-section">
-            <h3><i class="fas fa-list-ol"></i> Directions</h3>
-            <ol>
-                {% if recipe.directions %}
-                    {% set directions_list = recipe.directions.split('\n') %}
-                    {% for step in directions_list if step.strip() %}
-                        <li>{{ step.strip() }}</li>
-                    {% endfor %}
-                {% else %}
-                    <li>No directions provided.</li>
-                {% endif %}
-            </ol>
+        <div class="filter-section">
+            <h4>Cuisines</h4>
+            <ul class="filter-list">
+                <li><a href="/cuisine/american"><i class="fas fa-flag-usa"></i> American</a></li>
+                <li><a href="/cuisine/asian"><i class="fas fa-globe-asia"></i> Asian</a></li>
+                <li><a href="/cuisine/indian"><i class="fas fa-om"></i> Indian</a></li>
+                <li><a href="/cuisine/mexican"><i class="fas fa-pepper-hot"></i> Mexican</a></li>
+                <li><a href="/cuisine/italian"><i class="fas fa-pizza-slice"></i> Italian</a></li>
+                <li><a href="/cuisine/mediterranean"><i class="fas fa-fish"></i> Mediterranean</a></li>
+            </ul>
+        </div>
+
+        <div class="filter-section">
+            <h4>By Cooking Time</h4>
+            <ul class="filter-list">
+                <li><a href="/search-by-time/15min"><i class="fas fa-clock"></i> 15 minutes or less</a></li>
+                <li><a href="/search-by-time/30min"><i class="fas fa-clock"></i> 30 minutes or less</a></li>
+                <li><a href="/search-by-time/1hour"><i class="fas fa-clock"></i> 1 hour or less</a></li>
+            </ul>
+        </div>
+
+        <div class="filter-section">
+            <h4>By Ingredients</h4>
+            <ul class="filter-list">
+                <li><a href="/search-by-ingredients"><i class="fas fa-carrot"></i> What can I make?</a></li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        {% if recipes %}
+            <div class="recipe-grid">
+                {% for recipe in recipes %}
+                    <div class="recipe-card">
+                        {% if recipe.image_path %}
+                            <img src="{{ url_for(\'uploaded_file\', filename=recipe.image_path.split(\'/\')[-1]) }}" alt="{{ recipe.title }}" onerror="this.onerror=null; this.src=\'{{ url_for(\'static\', filename=\'placeholder-coming-soon.png\') }}\'">
+                        {% else %}
+                            <img src="{{ url_for('static', filename='placeholder-coming-soon.png') }}" alt="{{ recipe.title }}">
+                        {% endif %}
+                        <div class="recipe-card-content">
+                            <h4>{{ recipe.title }}</h4>
+                            <div class="recipe-meta">
+                                <span class="recipe-badge badge-category">
+                                    {% if recipe.category == 'breakfast' %}
+                                        <i class="fas fa-coffee"></i> Breakfast
+                                    {% elif recipe.category == 'snacks' %}
+                                        <i class="fas fa-utensils"></i> Snacks
+                                    {% elif recipe.category == 'lunch_dinner' %}
+                                        <i class="fas fa-leaf"></i> Lunch/Dinner
+                                    {% elif recipe.category == 'desserts' %}
+                                        <i class="fas fa-ice-cream"></i> Desserts
+                                    {% endif %}
+                                </span>
+                                {% if recipe.cuisine %}
+                                    <span class="recipe-badge badge-cuisine">
+                                        {% if recipe.cuisine == 'american' %}
+                                            <i class="fas fa-flag-usa"></i> American
+                                        {% elif recipe.cuisine == 'asian' %}
+                                            <i class="fas fa-globe-asia"></i> Asian
+                                        {% elif recipe.cuisine == 'indian' %}
+                                            <i class="fas fa-om"></i> Indian
+                                        {% elif recipe.cuisine == 'mexican' %}
+                                            <i class="fas fa-pepper-hot"></i> Mexican
+                                        {% elif recipe.cuisine == 'italian' %}
+                                            <i class="fas fa-pizza-slice"></i> Italian
+                                        {% elif recipe.cuisine == 'mediterranean' %}
+                                            <i class="fas fa-fish"></i> Mediterranean
+                                        {% endif %}
+                                    </span>
+                                {% endif %}
+                                {% if recipe.cooking_time_minutes %}
+                                    <span class="recipe-badge" style="background: #f0f0f0; color: #333;">
+                                        <i class="fas fa-clock"></i> {{ recipe.cooking_time_minutes }} min
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <p class="excerpt">{{ recipe.description | safe | truncate(100) }}</p>
+                            <a href="/recipe/{{ recipe.id }}" class="read-more">
+                                View Recipe <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="no-recipes">
+                <i class="fas fa-search"></i>
+                <p>No recipes found for "{{ query }}". Try a different search term!</p>
+            </div>
+        {% endif %}
+
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="/" class="back-link">
+                <i class="fas fa-home"></i> Back to Home
+            </a>
         </div>
     </div>
-
-    <a href="/" class="back-link" style="margin-top: 2rem;">
-        <i class="fas fa-arrow-left"></i> Back to Home
-    </a>
 </div>
-
-<style>
-.image-gallery {
-    margin-bottom: 2rem;
-}
-
-.main-image {
-    width: 100%;
-    max-height: 500px;
-    overflow: hidden;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-
-.main-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.thumbnail-gallery {
-    display: flex;
-    gap: 0.5rem;
-    overflow-x: auto;
-    padding: 0.5rem 0;
-}
-
-.thumbnail {
-    width: 100px;
-    height: 100px;
-    object-fit: cover;
-    border-radius: 4px;
-    cursor: pointer;
-    opacity: 0.6;
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
-}
-
-.thumbnail:hover {
-    opacity: 0.9;
-}
-
-.thumbnail.active {
-    opacity: 1;
-    border-color: #87A878;
-    box-shadow: 0 2px 4px rgba(135, 168, 120, 0.4);
-}
-
-@media (max-width: 768px) {
-    .main-image {
-        max-height: 300px;
-    }
-
-    .thumbnail {
-        width: 80px;
-        height: 80px;
-    }
-}
-</style>
-
-<script>
-function changeMainImage(thumbnail) {
-    // Update main image
-    const mainImage = document.getElementById('mainImage');
-    mainImage.src = thumbnail.src;
-
-    // Update active state
-    document.querySelectorAll('.thumbnail').forEach(thumb => {
-        thumb.classList.remove('active');
-    });
-    thumbnail.classList.add('active');
-}
-</script>
 {% endblock %}

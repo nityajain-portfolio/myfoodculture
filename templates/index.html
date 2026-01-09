@@ -90,9 +90,9 @@
                         <div class="recipe-card-horizontal">
                             <a href="/recipe/{{ recipe.id }}" style="text-decoration: none; color: inherit;">
                                 {% if recipe.image_path %}
-                                    <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
+                                    <img src="{{ url_for(\'uploaded_file\', filename=recipe.image_path.split(\'/\')[-1]) }}" alt="{{ recipe.title }}" onerror="this.onerror=null; this.src=\'{{ url_for(\'static\', filename=\'placeholder-coming-soon.png\') }}\'">
                                 {% else %}
-                                    <img src="https://via.placeholder.com/300x200/87A878/333333?text=No+Image" alt="{{ recipe.title }}">
+                                    <img src="{{ url_for('static', filename='placeholder-coming-soon.png') }}" alt="{{ recipe.title }}">
                                 {% endif %}
                                 <div class="card-info">
                                     <h4>{{ recipe.title }}</h4>
@@ -121,9 +121,9 @@
                         <div class="recipe-card-horizontal">
                             <a href="/recipe/{{ recipe.id }}" style="text-decoration: none; color: inherit;">
                                 {% if recipe.image_path %}
-                                    <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
+                                    <img src="{{ url_for(\'uploaded_file\', filename=recipe.image_path.split(\'/\')[-1]) }}" alt="{{ recipe.title }}" onerror="this.onerror=null; this.src=\'{{ url_for(\'static\', filename=\'placeholder-coming-soon.png\') }}\'">
                                 {% else %}
-                                    <img src="https://via.placeholder.com/300x200/87A878/333333?text=No+Image" alt="{{ recipe.title }}">
+                                    <img src="{{ url_for('static', filename='placeholder-coming-soon.png') }}" alt="{{ recipe.title }}">
                                 {% endif %}
                                 <div class="card-info">
                                     <h4>{{ recipe.title }}</h4>
@@ -150,9 +150,9 @@
                         <div class="recipe-card-horizontal">
                             <a href="/recipe/{{ recipe.id }}" style="text-decoration: none; color: inherit;">
                                 {% if recipe.image_path %}
-                                    <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
+                                    <img src="{{ url_for(\'uploaded_file\', filename=recipe.image_path.split(\'/\')[-1]) }}" alt="{{ recipe.title }}" onerror="this.onerror=null; this.src=\'{{ url_for(\'static\', filename=\'placeholder-coming-soon.png\') }}\'">
                                 {% else %}
-                                    <img src="https://via.placeholder.com/300x200/87A878/333333?text=No+Image" alt="{{ recipe.title }}">
+                                    <img src="{{ url_for('static', filename='placeholder-coming-soon.png') }}" alt="{{ recipe.title }}">
                                 {% endif %}
                                 <div class="card-info">
                                     <h4>{{ recipe.title }}</h4>
@@ -184,9 +184,9 @@
                         <div class="recipe-card-horizontal">
                             <a href="/recipe/{{ recipe.id }}" style="text-decoration: none; color: inherit;">
                                 {% if recipe.image_path %}
-                                    <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
+                                    <img src="{{ url_for(\'uploaded_file\', filename=recipe.image_path.split(\'/\')[-1]) }}" alt="{{ recipe.title }}" onerror="this.onerror=null; this.src=\'{{ url_for(\'static\', filename=\'placeholder-coming-soon.png\') }}\'">
                                 {% else %}
-                                    <img src="https://via.placeholder.com/300x200/87A878/333333?text=No+Image" alt="{{ recipe.title }}">
+                                    <img src="{{ url_for('static', filename='placeholder-coming-soon.png') }}" alt="{{ recipe.title }}">
                                 {% endif %}
                                 <div class="card-info">
                                     <h4>{{ recipe.title }}</h4>
@@ -218,9 +218,9 @@
                         <div class="recipe-card-horizontal">
                             <a href="/recipe/{{ recipe.id }}" style="text-decoration: none; color: inherit;">
                                 {% if recipe.image_path %}
-                                    <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
+                                    <img src="{{ url_for(\'uploaded_file\', filename=recipe.image_path.split(\'/\')[-1]) }}" alt="{{ recipe.title }}" onerror="this.onerror=null; this.src=\'{{ url_for(\'static\', filename=\'placeholder-coming-soon.png\') }}\'">
                                 {% else %}
-                                    <img src="https://via.placeholder.com/300x200/87A878/333333?text=No+Image" alt="{{ recipe.title }}">
+                                    <img src="{{ url_for('static', filename='placeholder-coming-soon.png') }}" alt="{{ recipe.title }}">
                                 {% endif %}
                                 <div class="card-info">
                                     <h4>{{ recipe.title }}</h4>
@@ -252,9 +252,9 @@
                         <div class="recipe-card-horizontal">
                             <a href="/recipe/{{ recipe.id }}" style="text-decoration: none; color: inherit;">
                                 {% if recipe.image_path %}
-                                    <img src="{{ url_for('uploaded_file', filename=recipe.image_path.split('/')[-1]) }}" alt="{{ recipe.title }}">
+                                    <img src="{{ url_for(\'uploaded_file\', filename=recipe.image_path.split(\'/\')[-1]) }}" alt="{{ recipe.title }}" onerror="this.onerror=null; this.src=\'{{ url_for(\'static\', filename=\'placeholder-coming-soon.png\') }}\'">
                                 {% else %}
-                                    <img src="https://via.placeholder.com/300x200/87A878/333333?text=No+Image" alt="{{ recipe.title }}">
+                                    <img src="{{ url_for('static', filename='placeholder-coming-soon.png') }}" alt="{{ recipe.title }}">
                                 {% endif %}
                                 <div class="card-info">
                                     <h4>{{ recipe.title }}</h4>
