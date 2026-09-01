@@ -205,7 +205,7 @@ def cuisine(cuisine_type):
     print(f"\n🌍 Loading cuisine: {cuisine_type}")
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    # FIXED: Use LOWER() for case-insensitive matching
+    # Case-insensitive matching
     cursor.execute("SELECT * FROM recipes WHERE LOWER(cuisine) = LOWER(%s)", (cuisine_type,))
     recipes = cursor.fetchall()
 
@@ -317,7 +317,10 @@ def search():
 
 
 @app.route('/add', methods=['GET', 'POST'])
+@auth_required
 def add_recipe():
+    """Add a new recipe. Protected so only the admin can create recipes.
+    This is the endpoint the admin.html form posts to when adding (not editing)."""
     if request.method == 'POST':
         print("\n➕ Adding new recipe...")
 
@@ -348,7 +351,7 @@ def add_recipe():
 
         if missing_fields:
             flash(f'Missing required fields: {", ".join(missing_fields)}')
-            return redirect(url_for('add_recipe'))
+            return redirect(url_for('admin'))
 
         cooking_time_value = int(cooking_time) if cooking_time and cooking_time.strip() else None
 
@@ -370,14 +373,15 @@ def add_recipe():
 
             print(f"✅ Recipe added successfully with ID: {recipe_id}\n")
             flash('Recipe added successfully!')
-            return redirect(url_for('index'))
+            return redirect(url_for('admin'))
 
         except Exception as e:
             print(f"❌ Error adding recipe: {str(e)}\n")
             flash(f'Error adding recipe: {str(e)}')
-            return redirect(url_for('add_recipe'))
+            return redirect(url_for('admin'))
 
-    return render_template('add.html')
+    # GET request to /add just sends them to the admin form
+    return redirect(url_for('admin'))
 
 
 @app.route('/admin')
