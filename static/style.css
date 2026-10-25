@@ -1300,3 +1300,130 @@ footer p {
         padding: 1.5rem 1rem;
     }
 }
+/* Jain Restaurant Finder */
+.restaurant-search {
+    background: var(--white);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.restaurant-search-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.restaurant-search-field {
+    flex: 1 1 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.restaurant-search-field label {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.restaurant-search-field input,
+.restaurant-search-field select {
+    padding: 0.75rem;
+    border: 2px solid var(--primary-green);
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    background: var(--white);
+    color: var(--text-dark);
+}
+
+.restaurant-search-or {
+    padding-bottom: 0.8rem;
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+.restaurant-search-form button {
+    padding: 0.8rem 1.8rem;
+    background: linear-gradient(135deg, var(--primary-green), var(--light-green));
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.restaurant-search-form button:hover {
+    background: var(--dark-green);
+}
+
+.restaurant-search-hint,
+.restaurant-results-count {
+    margin-top: 0.8rem;
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+.restaurant-results-count {
+    margin: 0 0 1.2rem;
+    font-size: 1rem;
+}
+
+.restaurant-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.2rem;
+}
+
+.restaurant-card {
+    background: var(--white);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    padding: 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.restaurant-card h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+}
+
+.restaurant-card .read-more {
+    align-self: flex-start;
+    margin-top: auto;
+}
+
+.restaurant-location {
+    color: var(--primary-red);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.restaurant-address,
+.restaurant-notes {
+    color: var(--text-medium);
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .restaurant-search-or {
+        flex-basis: 100%;
+        padding: 0;
+        text-align: center;
+    }
+
+    .restaurant-search-form button {
+        width: 100%;
+    }
+
+    .restaurant-grid {
+        grid-template-columns: 1fr;
+    }
+}

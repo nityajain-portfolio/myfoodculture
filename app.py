@@ -742,6 +742,61 @@ def search_by_time(time_filter):
         return redirect(url_for('index'))
 
 
+@app.route('/restaurants')
+def restaurant_finder():
+    """Jain Restaurant Finder - search by zip/postal code and/or country"""
+    zipcode = request.args.get('zip', '').strip()
+    country = request.args.get('country', '').strip()
+    searched = bool(zipcode or country)
+    print(f"\n🍽️  Restaurant finder - zip: '{zipcode}', country: '{country}'")
+
+    countries = []
+    restaurants = []
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        cursor.execute("SELECT DISTINCT country FROM jain_restaurants WHERE country IS NOT NULL ORDER BY country")
+        countries = [row['country'] for row in cursor.fetchall()]
+
+        if searched:
+            conditions = []
+            params = []
+            if zipcode:
+                # Prefix match ignoring spaces, so "088" finds central NJ and "M5T1H8" finds "M5T 1H8".
+                # Also check the address for postal codes the importer couldn't extract.
+                compact_zip = zipcode.replace(' ', '')
+                conditions.append("(REPLACE(postal_code, ' ', '') LIKE %s OR address LIKE %s)")
+                params.extend([f'{compact_zip}%', f'%{zipcode}%'])
+            if country:
+                conditions.append("country = %s")
+                params.append(country)
+
+            cursor.execute(f"""
+                SELECT * FROM jain_restaurants
+                WHERE {' AND '.join(conditions)}
+                ORDER BY country, city, name
+            """, params)
+            restaurants = cursor.fetchall()
+            print(f"✅ Found {len(restaurants)} restaurants\n")
+
+        cursor.close()
+        conn.close()
+
+    except Exception as e:
+        print(f"❌ Restaurant finder error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        flash(f'Error searching restaurants: {str(e)}')
+
+    return render_template('restaurants.html',
+                           restaurants=restaurants,
+                           countries=countries,
+                           zipcode=zipcode,
+                           country=country,
+                           searched=searched)
+
+
 if __name__ == '__main__':
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     print("✅ Upload folder created/verified\n")

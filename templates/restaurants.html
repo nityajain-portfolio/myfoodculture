@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% block title %}Jain Restaurant Finder - MyFoodCulture{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h2><i class="fas fa-utensils"></i> Jain Restaurant Finder</h2>
+    <p>Find Jain-friendly restaurants by zip/postal code or country</p>
+</div>
+
+<div class="restaurant-search">
+    <form action="/restaurants" method="GET" class="restaurant-search-form">
+        <div class="restaurant-search-field">
+            <label for="zip"><i class="fas fa-map-pin"></i> Zip / Postal Code</label>
+            <input type="text" id="zip" name="zip" placeholder="e.g. 08820 or M5T" value="{{ zipcode }}">
+        </div>
+        <div class="restaurant-search-or">or</div>
+        <div class="restaurant-search-field">
+            <label for="country"><i class="fas fa-globe"></i> Country</label>
+            <select id="country" name="country">
+                <option value="">All countries</option>
+                {% for c in countries %}
+                    <option value="{{ c }}" {% if c == country %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit"><i class="fas fa-search"></i> Search</button>
+    </form>
+    <p class="restaurant-search-hint">Enter a zip code, pick a country, or both. Partial zip codes work too (e.g. "088" for central New Jersey).</p>
+</div>
+
+{% if searched %}
+    <p class="restaurant-results-count">
+        {{ restaurants|length }} restaurant(s) found
+        {% if zipcode %} for zip <strong>{{ zipcode }}</strong>{% endif %}
+        {% if country %} in <strong>{{ country }}</strong>{% endif %}
+    </p>
+
+    {% if restaurants %}
+        <div class="restaurant-grid">
+            {% for r in restaurants %}
+                <div class="restaurant-card">
+                    <h4>{{ r.name }}</h4>
+                    <p class="restaurant-location">
+                        <i class="fas fa-map-marker-alt"></i>
+                        {{ r.city }}{% if r.city and r.country %}, {% endif %}{{ r.country }}
+                    </p>
+                    <div class="recipe-meta">
+                        {% if r.jain_options %}
+                            <span class="recipe-badge badge-category"><i class="fas fa-leaf"></i> {{ r.jain_options }}</span>
+                        {% endif %}
+                        {% if r.cuisine %}
+                            <span class="recipe-badge badge-cuisine">{{ r.cuisine }}</span>
+                        {% endif %}
+                        {% if r.place_type %}
+                            <span class="recipe-badge" style="background: #f0f0f0; color: #333;">{{ r.place_type }}</span>
+                        {% endif %}
+                        {% if r.price %}
+                            <span class="recipe-badge" style="background: #f0f0f0; color: #333;">{{ r.price }}</span>
+                        {% endif %}
+                    </div>
+                    {% if r.address %}
+                        <p class="restaurant-address">{{ r.address }}</p>
+                    {% endif %}
+                    {% if r.notes %}
+                        <p class="restaurant-notes"><i class="fas fa-lightbulb"></i> {{ r.notes }}</p>
+                    {% endif %}
+                    {% if r.maps_url %}
+                        <a href="{{ r.maps_url }}" target="_blank" rel="noopener" class="read-more">
+                            Open in Maps <i class="fas fa-arrow-right"></i>
+                        </a>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-recipes">
+            <i class="fas fa-search"></i>
+            <p>No restaurants found. Try a shorter zip code or a different country!</p>
+        </div>
+    {% endif %}
+{% endif %}
+
+<div style="text-align: center; margin-top: 2rem;">
+    <a href="/" class="back-link">
+        <i class="fas fa-home"></i> Back to Home
+    </a>
+</div>
+{% endblock %}
